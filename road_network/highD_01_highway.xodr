@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OpenDRIVE xmlns="http://www.opendrive.org">
+    <header revMajor="1" revMinor="6" date="2024-10-01T14:58:58">
+        <userData code="Created by IPGRoad" value="LibVersion 11.1.1" />
+    </header>
+    <road name="object 0" length="1000" id="0" junction="-1" rule="RHT">
+        <type s="0" type="rural" country="DE">
+            <speed max="100" unit="km/h" />
+        </type>
+        <planView>
+            <geometry s="0" x="0" y="-16.43" hdg="-2.44921270764475e-016" length="1000">
+                <line />
+            </geometry>
+        </planView>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="3" type="border">
+                        <width sOffset="0" a="1" b="0" c="0" d="0" />
+                        <material sOffset="0" friction="1" />
+                        <speed sOffset="0" max="100" unit="km/h" />
+                    </lane>
+                    <lane id="2" type="driving">
+                        <width sOffset="0" a="4.08" b="0" c="0" d="0" />
+                        <roadMark sOffset="1e-007" type="solid" color="white" width="0.15" height="0">
+                            <type name="solid" width="0.15">
+                                <line length="0" space="0" tOffset="-0" sOffset="0" width="0.15" />
+                            </type>
+                        </roadMark>
+                        <material sOffset="0" friction="1" />
+                        <speed sOffset="0" max="100" unit="km/h" />
+                    </lane>
+                    <lane id="1" type="driving">
+                        <width sOffset="0" a="3.84" b="0" c="0" d="0" />
+                        <roadMark sOffset="1e-007" type="broken" color="white" width="0.15" height="0">
+                            <type name="broken" width="0.15">
+                                <line length="2" space="4" tOffset="-0" sOffset="0" width="0.15" />
+                            </type>
+                        </roadMark>
+                        <material sOffset="0" friction="1" />
+                        <speed sOffset="0" max="100" unit="km/h" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="driving">
+                        <roadMark sOffset="1e-007" type="solid" color="white" width="0.15" height="0">
+                            <type name="solid" width="0.15">
+                                <line length="0" space="0" tOffset="0" sOffset="0" width="0.15" />
+                            </type>
+                        </roadMark>
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="border">
+                        <width sOffset="0" a="1" b="0" c="0" d="0" />
+                        <material sOffset="0" friction="1" />
+                        <speed sOffset="0" max="100" unit="km/h" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+    <road name="object 3" length="1000" id="1" junction="-1" rule="RHT">
+        <type s="0" type="rural" country="DE">
+            <speed max="100" unit="km/h" />
+        </type>
+        <planView>
+            <geometry s="0" x="0" y="-21" hdg="-2.44921270764475e-016" length="1000">
+                <line />
+            </geometry>
+        </planView>
+        <lanes>
+            <laneSection s="0">
+                <left>
+                    <lane id="1" type="border">
+                        <width sOffset="0" a="1" b="0" c="0" d="0" />
+                        <material sOffset="0" friction="1" />
+                        <speed sOffset="0" max="100" unit="km/h" />
+                    </lane>
+                </left>
+                <center>
+                    <lane id="0" type="driving">
+                        <roadMark sOffset="1e-007" type="solid" color="white" width="0.15" height="0">
+                            <type name="solid" width="0.15">
+                                <line length="0" space="0" tOffset="0" sOffset="0" width="0.15" />
+                            </type>
+                        </roadMark>
+                        <roadMark sOffset="999.565" type="none" color="standard" />
+                    </lane>
+                </center>
+                <right>
+                    <lane id="-1" type="driving">
+                        <width sOffset="0" a="3.96" b="0" c="0" d="0" />
+                        <roadMark sOffset="1e-007" type="broken" color="white" width="0.15" height="0">
+                            <type name="broken" width="0.15">
+                                <line length="2" space="4" tOffset="0" sOffset="0" width="0.15" />
+                            </type>
+                        </roadMark>
+                        <roadMark sOffset="999.879" type="none" color="standard" />
+                        <material sOffset="0" friction="1" />
+                        <speed sOffset="0" max="100" unit="km/h" />
+                    </lane>
+                    <lane id="-2" type="driving">
+                        <width sOffset="0" a="3.84" b="0" c="0" d="0" />
+                        <roadMark sOffset="1e-007" type="solid" color="white" width="0.15" height="0">
+                            <type name="solid" width="0.15">
+                                <line length="0" space="0" tOffset="0" sOffset="0" width="0.15" />
+                            </type>
+                        </roadMark>
+                        <material sOffset="0" friction="1" />
+                        <speed sOffset="0" max="100" unit="km/h" />
+                    </lane>
+                    <lane id="-3" type="border">
+                        <width sOffset="0" a="1" b="0" c="0" d="0" />
+                        <material sOffset="0" friction="1" />
+                        <speed sOffset="0" max="100" unit="km/h" />
+                    </lane>
+                </right>
+            </laneSection>
+        </lanes>
+    </road>
+</OpenDRIVE>
