@@ -122,17 +122,21 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 reminder_holder.warning(':thinking_face: Start understand scenario using LLM...')
                 progress_bar = st.progress(0)
                 key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar)
+                print('Response of the LLM:')
+                print(key_label)
+                # Check if key_label is valid
+                check_key_label = validate_scenario(key_label, reminder_holder)
 
-                tracks_original = pd.read_csv(dataset_load)    
-                # Insert original csv in the global variable
-                st.session_state.my_data['tracks_original'] = tracks_original
-                # Calculate all vehicles' longitudinal and lateral activity
-                reminder_holder.warning(':running: Start analyze the vehicle activity...')
-                longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar)
+                if check_key_label:
+
+                    tracks_original = pd.read_csv(dataset_load)    
+                    # Insert original csv in the global variable
+                    st.session_state.my_data['tracks_original'] = tracks_original
+                    # Calculate all vehicles' longitudinal and lateral activity
+                    reminder_holder.warning(':running: Start analyze the vehicle activity...')
+                    longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar)
                 
-                if key_label != None:
-                    print('Response of the LLM:')
-                    print(key_label)
+                # if key_label != None:
                     # Search correspondong scenarios from dictionary based on the key labels
                     reminder_holder.warning(':mag: Start search desired scenarios...')
                     scenarioList = mainFunctionScenarioIdentification(tracks_original, key_label, latActDict, longActDict, interactIdDict, progress_bar)
@@ -166,7 +170,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                         if indexProgress == len(scenarioList):
                             progress_bar.progress(100)
 
-                reminder_holder.write(st.session_state.my_data['desired_scenario'])
+                # reminder_holder.write(st.session_state.my_data['desired_scenario'])
 
 
                 ## Scenario visualization

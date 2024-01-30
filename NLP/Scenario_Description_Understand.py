@@ -152,7 +152,83 @@ def get_scenario_classification_via_LLM(openai_key, scenario_description, progre
     return key_label
 
 
-# length of key_label can be used to judge how many target vehicles are contained
+def validate_scenario(sample, reminder_holder):
+    """
+    validate the key label extracted from LLM response
+
+    Parameters:
+    ----------
+    Inputs:
+        sample (dict): key label extracted from LLM response
+        reminder_holder: st.empty()
+
+    Returns:
+        true/false (bool): True --> key_label is valid; False: key_label is NOT valid
+    ----------
+    """
+
+    model = {
+        'Ego Vehicle': {
+            'longitudinal activity': ['keep velocity', 'acceleration', 'deceleration'],
+            'lateral activity': ['follow lane', 'lane change left', 'lane change right']
+        },
+        'Target Vehicle': {
+            'position': {
+                'same lane': ['front', 'behind'],
+                'adjacent lane': ['left adjacent lane', 'right adjacent lane'],
+                'lane next to adjacent lane': ['lane next to left adjacent lane', 'lane next to right adjacent lane']
+            },
+            'behavior': {
+                'longitudinal activity': ['keep velocity', 'acceleration', 'deceleration'],
+                'lateral activity': ['follow lane', 'lane change left', 'lane change right']
+            }
+        }
+    }
+
+    # Helper function to check activities
+    def check_activities(activities, model_activities):
+        return all(activity in model_activities for activity in activities)
+
+    # Check Ego Vehicle activities
+    ego_activities = sample.get('Ego Vehicle', {})
+    egoLonActCheck = check_activities(ego_activities.get('Ego longitudinal activity', []), 
+                            model['Ego Vehicle']['longitudinal activity'])
+    egoLatActCheck = check_activities(ego_activities.get('Ego lateral activity', []), 
+                            model['Ego Vehicle']['lateral activity'])
+    
+    if not egoLonActCheck or not egoLatActCheck:
+        reminder_holder.warning("Invalid activities for Ego Vehicle")
+        return False
+
+    # Check Target Vehicle activities and positions
+    for target_vehicle, details in sample.items():
+        if "Target Vehicle" in target_vehicle:
+            # Check Target behavior
+            target_behavior = details.get('Target behavior', {})
+            tgtLonActCheck = check_activities(target_behavior.get('target longitudinal activity', []), 
+                                    model['Target Vehicle']['behavior']['longitudinal activity'])
+            tgtLatActCheck = check_activities(target_behavior.get('target lateral activity', []), 
+                                    model['Target Vehicle']['behavior']['lateral activity'])
+
+            if not tgtLonActCheck or not tgtLatActCheck:
+                reminder_holder.warning("Invalid target behavior for Target Vehicle")
+                return False
+            
+            # Check Target start and end positions
+            for position_key in ['Target start position', 'Target end position']:
+                position = details.get(position_key, {})
+                for pos_type, pos_value in position.items():
+                    if pos_type in model['Target Vehicle']['position']:
+                        if not check_activities(pos_value, model['Target Vehicle']['position'][pos_type]):
+                            reminder_holder.warning(f"Invalid {position_key} in {pos_type} for {target_vehicle}")
+                            return False
+                    else:
+                        reminder_holder.warning(f"Invalid position type: {pos_type} for {target_vehicle}")
+                        return False
+    
+    reminder_holder.warning("Validation successful.")
+    return True
+
 
 
 
