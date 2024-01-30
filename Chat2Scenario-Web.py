@@ -118,17 +118,18 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
         if preview_button: 
             meet_preview = check_preview_condition(reminder_holder, dataset_load, metric_suboption, metric_threshold, my_key, scenario_description)
             if meet_preview and csv_format:
+                # Understand scenario using GPT
+                reminder_holder.warning(':thinking_face: Start understand scenario using LLM...')
+                progress_bar = st.progress(0)
+                key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar)
+
                 tracks_original = pd.read_csv(dataset_load)    
                 # Insert original csv in the global variable
                 st.session_state.my_data['tracks_original'] = tracks_original
                 # Calculate all vehicles' longitudinal and lateral activity
                 reminder_holder.warning(':running: Start analyze the vehicle activity...')
-                progress_bar = st.progress(0)
                 longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar)
-
-                # Understand scenario using GPT
-                reminder_holder.warning(':thinking_face: Start understand scenario using LLM...')
-                key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar)
+                
                 if key_label != None:
                     print('Response of the LLM:')
                     print(key_label)
