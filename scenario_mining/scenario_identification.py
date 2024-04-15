@@ -1,6 +1,7 @@
 import pandas as pd
 import pickle
-from utils.helper_original_scenario import *
+import streamlit as st
+# from utils.helper_original_scenario import *
 
 def intersection_judge(list1, list2):
     """
@@ -16,6 +17,8 @@ def intersection_judge(list1, list2):
     list: begin and end frame of the intersected
     ----------
     """
+    if len(list1) == 0 or len(list2) == 0:
+        return []
 
     a, b = list1
     c, d = list2
@@ -239,6 +242,7 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
             # Current ego info
             curr_ego_start_row = tracks_36[(tracks_36['id'] == curr_ego) & (tracks_36['frame'] == inter[0])].reset_index(drop=True)
             curr_ego_end_row = tracks_36[(tracks_36['id'] == curr_ego) & (tracks_36['frame'] == inter[1])].reset_index(drop=True)
+            curr_ego_life = tracks_36[(tracks_36['id'] == curr_ego)].reset_index(drop=True)
             # Current target info
             curr_tgt_start_row = tracks_36[(tracks_36['id'] == curr_interact_tgt) & (tracks_36['frame'] == inter[0])].reset_index(drop=True)
             curr_tgt_end_row = tracks_36[(tracks_36['id'] == curr_interact_tgt) & (tracks_36['frame'] == inter[1])].reset_index(drop=True)
@@ -255,16 +259,28 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
             laneDiffStart = curr_tgt_start_lane - curr_ego_start_lane
             curr_tgt_pos_start = pos_calc(laneDiffStart, ego_drive_direction, delta_x_tgt_ego_start)
 
+            # If current target vehicle was not once the precedingId of the current ego vehicle, then skip
+            if curr_interact_tgt not in curr_ego_life['precedingId'].values:
+                continue
+
             if curr_tgt_pos_start == req_tgt_startPos: # Judge the start position
                 # Calculate the target vehicle position at end
                 delta_x_tgt_ego_end = curr_tgt_end_row['x'][0] - curr_ego_end_row['x'][0]
                 laneDiffEnd = curr_tgt_end_lane - curr_ego_end_lane
                 curr_tgt_pos_end = pos_calc(laneDiffEnd, ego_drive_direction, delta_x_tgt_ego_end)
                 if curr_tgt_pos_end == req_tgt_endPos: # Judge the end position
-                    # Judge the ego vehicle longitudinal activity
-                    if req_ego_lonAct not in curr_ego_lonActs['LongitudinalActivity'].values:
+                    # If longitudinal activity is omitted, get current targetID and BegFrame, EndFrame
+                    if req_ego_lonAct ==  'NA' and req_tgt_longAct == 'NA':
+                        tgt_list.append(curr_interact_tgt)
+                        interFinal = []
+                        interFinal.append(inter[0])
+                        interFinal.append(inter[1])
                         continue
-                    # Judge the target vehicle longitudinal activity
+
+                    # Judge the ego vehicle longitudinal activity: if 'NA', omit longitudinal
+                    if req_ego_lonAct not in curr_ego_lonActs['LongitudinalActivity'].values:
+                            continue
+                    # Judge the target vehicle longitudinal activity: 
                     curr_tgt_lonAct = longActDict[curr_interact_tgt]
                     if req_tgt_longAct not in curr_tgt_lonAct['LongitudinalActivity'].values:
                         continue
@@ -294,7 +310,6 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
 
 # if __name__ == "__main__":
 
-    
 
 #     ## option
 #     selected_opts = "xosc"
@@ -302,57 +317,57 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
 
 #     # Quantitive evaluation of framework
 #     # 1. following scenario (ignore the longitudinal activity)
-#     following = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
+#     following = {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
 #     'Ego lateral activity': ['follow lane']}, 
-#     'Target Vehicle #1': {'Target start position': {'same lane': ['behind']}, 
-#     'Target end position': {'same lane': ['behind']}, 
-#     'Target behavior': {'target longitudinal activity': ['acceleration'], 
+#     'Target Vehicle #1': {'Target start position': {'same lane': ['front']}, 
+#     'Target end position': {'same lane': ['front']}, 
+#     'Target behavior': {'target longitudinal activity': ['NA'], 
 #     'target lateral activity': ['follow lane']}}}
 
 #     # 2. cut-in scenario (ignore the longitudinal activity; left & right)
-#     cut_in_left = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
+#     cut_in_left = {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
 #     'Ego lateral activity': ['follow lane']}, 
-#     'Target Vehicle #1': {'Target start position': {'adjacent lane': ['left']}, 
+#     'Target Vehicle #1': {'Target start position': {'adjacent lane': ['left adjacent lane']}, 
 #     'Target end position': {'same lane': ['front']}, 
-#     'Target behavior': {'target longitudinal activity': ['acceleration'], 
+#     'Target behavior': {'target longitudinal activity': ['NA'], 
 #     'target lateral activity': ['lane change right']}}}
 
-#     cut_in_right = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
+#     cut_in_right = {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
 #     'Ego lateral activity': ['follow lane']}, 
-#     'Target Vehicle #1': {'Target start position': {'adjacent lane': ['right']}, 
+#     'Target Vehicle #1': {'Target start position': {'adjacent lane': ['right adjacent lane']}, 
 #     'Target end position': {'same lane': ['front']}, 
-#     'Target behavior': {'target longitudinal activity': ['acceleration'], 
+#     'Target behavior': {'target longitudinal activity': ['NA'], 
 #     'target lateral activity': ['lane change left']}}}
 
 #     # 3. cut-out left 
-#     cut_out_left = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
+#     cut_out_left = {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
 #     'Ego lateral activity': ['follow lane']}, 
 #     'Target Vehicle #1': {'Target start position': {'same lane': ['front']}, 
-#     'Target end position': {'adjacent lane': ['left']}, 
-#     'Target behavior': {'target longitudinal activity': ['acceleration'], 
+#     'Target end position': {'adjacent lane': ['left adjacent lane']}, 
+#     'Target behavior': {'target longitudinal activity': ['NA'], 
 #     'target lateral activity': ['lane change left']}}}
 
-#     cut_out_right = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
+#     cut_out_right = {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
 #     'Ego lateral activity': ['follow lane']}, 
 #     'Target Vehicle #1': {'Target start position': {'same lane': ['front']}, 
-#     'Target end position': {'adjacent lane': ['right']}, 
-#     'Target behavior': {'target longitudinal activity': ['acceleration'], 
+#     'Target end position': {'adjacent lane': ['right adjacent lane']}, 
+#     'Target behavior': {'target longitudinal activity': ['NA'], 
 #     'target lateral activity': ['lane change right']}}}
 
-#     # 4. left evasion
-#     left_evasion = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
-#     'Ego lateral activity': ['follow lane']}, 
-#     'Target Vehicle #1': {'Target start position': {'same lane': ['behind']}, 
-#     'Target end position': {'adjacent lane': ['left']}, 
-#     'Target behavior': {'target longitudinal activity': ['acceleration'], 
-#     'target lateral activity': ['lane change left']}}}
+#     # # 4. left evasion
+#     # left_evasion = {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
+#     # 'Ego lateral activity': ['lane change left']}, 
+#     # 'Target Vehicle #1': {'Target start position': {'same lane': ['front']}, 
+#     # 'Target end position': {'adjacent lane': ['right adjacent lane']}, 
+#     # 'Target behavior': {'target longitudinal activity': ['NA'], 
+#     # 'target lateral activity': ['follow lane']}}}
 
-#     right_evasion = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
-#     'Ego lateral activity': ['follow lane']}, 
-#     'Target Vehicle #1': {'Target start position': {'same lane': ['behind']}, 
-#     'Target end position': {'adjacent lane': ['right']}, 
-#     'Target behavior': {'target longitudinal activity': ['acceleration'], 
-#     'target lateral activity': ['lane change right']}}}
+#     # right_evasion = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
+#     # 'Ego lateral activity': ['follow lane']}, 
+#     # 'Target Vehicle #1': {'Target start position': {'same lane': ['behind']}, 
+#     # 'Target end position': {'adjacent lane': ['right']}, 
+#     # 'Target behavior': {'target longitudinal activity': ['acceleration'], 
+#     # 'target lateral activity': ['lane change right']}}}
 
 #     # ## LLM Response
 #     # key_label = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
@@ -366,68 +381,73 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
 #     oriTracksDf = pd.read_csv("C:\\PhD\\Dataset\\highD\\data\\36_tracks.csv")
 
 #     ## Vehicle activity
-#     with open("C:\\PhD\\0_scenario_generation_PaperPrepare\\Vehicle_Activity\\track_36_act\\interactIdDict.pickle", 'rb') as handle:
+#     with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\interactIdDict.pickle", 'rb') as handle:
 #         interactIdDict = pickle.load(handle)
-#     with open("C:\\PhD\\0_scenario_generation_PaperPrepare\\Vehicle_Activity\\track_36_act\\latActDict.pickle", 'rb') as handle:
-#         latActDict = pickle.load(handle)
-#     with open("C:\\PhD\\0_scenario_generation_PaperPrepare\\Vehicle_Activity\\track_36_act\\longActDict.pickle", 'rb') as handle:
-#         longActDict = pickle.load(handle)
+#     latActDict = pd.read_pickle("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\latActDict.pickle", compression=None)
+#     # with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\latActDict.pickle", 'rb') as handle:
+#     #     latActDict = pickle.load(handle)
+#     longActDict = pd.read_pickle("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\longActDict.pickle", compression=None)
+#     # with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\longActDict.pickle", 'rb') as handle:
+#     #     longActDict = pickle.load(handle)
 
 #     progress_bar = st.progress(0)
 #     scenarioLists = mainFunctionScenarioIdentification(oriTracksDf, following, latActDict, longActDict, interactIdDict, progress_bar)
+#     # Saving the list
+#     with open('followingSce.pkl', 'wb') as file:
+#         pickle.dump(scenarioLists, file)
 #     numScenario = len(scenarioLists)
 #     print(f'{numScenario} scenarios are found!')
 #     print(scenarioLists)
 
-#     xosc_index = 1
-#     for desired_scenario in scenarioLists:
-#         print(desired_scenario)
+#     # xosc_index = 1
+#     # for desired_scenario in scenarioLists:
+#     #     print(desired_scenario)
 
-#         # Get the ego vehicle information
-#         egoVehID = desired_scenario[0]
-#         egoVehTraj = oriTracksDf[oriTracksDf['id']==egoVehID].reset_index(drop=True)
+#     #     # Get the ego vehicle information
+#     #     egoVehID = desired_scenario[0]
+#     #     egoVehTraj = oriTracksDf[oriTracksDf['id']==egoVehID].reset_index(drop=True)
 
-#         # Find intersection of frames with the current target vehicle
-#         common_frames = set(egoVehTraj['frame'])
-#         tgtVehIDs = desired_scenario[1]
-#         tgtVehTraj_common = []
-#         for tgtVehID in tgtVehIDs:
-#             tgtVehTraj = oriTracksDf[oriTracksDf['id'] == tgtVehID].reset_index(drop=True)
-#             common_frames = common_frames.intersection(set(tgtVehTraj['frame']))
+#     #     # Find intersection of frames with the current target vehicle
+#     #     common_frames = set(egoVehTraj['frame'])
+#     #     tgtVehIDs = desired_scenario[1]
+#     #     tgtVehTraj_common = []
+#     #     for tgtVehID in tgtVehIDs:
+#     #         tgtVehTraj = oriTracksDf[oriTracksDf['id'] == tgtVehID].reset_index(drop=True)
+#     #         common_frames = common_frames.intersection(set(tgtVehTraj['frame']))
             
-#         # Now common_frames contains only frames that are common across all target vehicles and the ego vehicle
-#         egoVehTraj_common = egoVehTraj[egoVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
+#     #     # Now common_frames contains only frames that are common across all target vehicles and the ego vehicle
+#     #     egoVehTraj_common = egoVehTraj[egoVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
 
-#         # Ego vehicle trajectory post-processing: 1) add time; 2) move position; 3) flip y 
-#         ego_time = (egoVehTraj_common['frame'] - egoVehTraj_common['frame'].iloc[0])/25
-#         egoVehTraj_common['time'] = ego_time
-#         egoVehTraj_common['x'] = egoVehTraj_common['x'] + 0.5*egoVehTraj_common['width']
-#         egoVehTraj_common['y'] = egoVehTraj_common['y'] + 0.5*egoVehTraj_common['height']
-#         egoVehTraj_common['y'] = -egoVehTraj_common['y']
+#     #     # Ego vehicle trajectory post-processing: 1) add time; 2) move position; 3) flip y 
+#     #     ego_time = (egoVehTraj_common['frame'] - egoVehTraj_common['frame'].iloc[0])/25
+#     #     egoVehTraj_common['time'] = ego_time
+#     #     egoVehTraj_common['x'] = egoVehTraj_common['x'] + 0.5*egoVehTraj_common['width']
+#     #     egoVehTraj_common['y'] = egoVehTraj_common['y'] + 0.5*egoVehTraj_common['height']
+#     #     egoVehTraj_common['y'] = -egoVehTraj_common['y']
 
-#         tgtVehTrajs_common = []
-#         # Get common trajectory data for all target vehicles
-#         for tgtVehID in tgtVehIDs:
-#             tgtVehTraj = oriTracksDf[oriTracksDf['id'] == tgtVehID]
-#             tgtVehTraj_common = tgtVehTraj[tgtVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
-#             # Target vehicle trajectory post-processing: 1) ad "time"; 2) move position; 3) flip y value  
-#             tgt_time = (tgtVehTraj_common['frame'] - tgtVehTraj_common['frame'].iloc[0])/25
-#             tgtVehTraj_common['time'] = tgt_time
-#             tgtVehTraj_common['x'] = tgtVehTraj_common['x'] + 0.5*tgtVehTraj_common['width']
-#             tgtVehTraj_common['y'] = tgtVehTraj_common['y'] + 0.5*tgtVehTraj_common['height']
-#             tgtVehTraj_common['y'] = -tgtVehTraj_common['y']
-#             tgtVehTrajs_common.append(tgtVehTraj_common)
+#     #     tgtVehTrajs_common = []
+#     #     # Get common trajectory data for all target vehicles
+#     #     for tgtVehID in tgtVehIDs:
+#     #         tgtVehTraj = oriTracksDf[oriTracksDf['id'] == tgtVehID]
+#     #         tgtVehTraj_common = tgtVehTraj[tgtVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
+#     #         # Target vehicle trajectory post-processing: 1) ad "time"; 2) move position; 3) flip y value  
+#     #         tgt_time = (tgtVehTraj_common['frame'] - tgtVehTraj_common['frame'].iloc[0])/25
+#     #         tgtVehTraj_common['time'] = tgt_time
+#     #         tgtVehTraj_common['x'] = tgtVehTraj_common['x'] + 0.5*tgtVehTraj_common['width']
+#     #         tgtVehTraj_common['y'] = tgtVehTraj_common['y'] + 0.5*tgtVehTraj_common['height']
+#     #         tgtVehTraj_common['y'] = -tgtVehTraj_common['y']
+#     #         tgtVehTrajs_common.append(tgtVehTraj_common)
             
 
-#         # Create input for "xosc_generation" and "IPG_CarMaker_text_generation"
-#         sim_time = len(egoVehTraj_common)/25
-#         output_path_xosc = output_path + '\\' + f'Chat2Scenario_xosc_{xosc_index}.xosc'
-#         output_path_text = output_path + '\\' + f'Chat2Scenario_text_{xosc_index}.txt'
-#         ego_track = egoVehTraj_common
-#         tgt_tracks = tgtVehTrajs_common
+#     #     # Create input for "xosc_generation" and "IPG_CarMaker_text_generation"
+#     #     sim_time = len(egoVehTraj_common)/25
+#     #     output_path_xosc = output_path + '\\' + f'Chat2Scenario_xosc_{xosc_index}.xosc'
+#     #     output_path_text = output_path + '\\' + f'Chat2Scenario_text_{xosc_index}.txt'
+#     #     ego_track = egoVehTraj_common
+#     #     tgt_tracks = tgtVehTrajs_common
         
-#         if selected_opts == "xosc":
-#             xosc_generation(sim_time, output_path_xosc, ego_track, tgt_tracks)
+#     #     if selected_opts == "xosc":
+#     #         xosc_generation(sim_time, output_path_xosc, ego_track, tgt_tracks)
         
-#         xosc_index += 1
+#     #     xosc_index += 1
         
