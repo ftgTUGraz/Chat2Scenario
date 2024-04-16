@@ -32,7 +32,7 @@ Chat2Scenario is a web-based tool that allows users to search for specific drivi
 git clone https://github.com/zhaoyongqi2022/Chat2Scenario.git 
 ```
 ### Install all required packages
-#### method 1 - in your original environment
+#### Method 1 - in your original environment
 ```bash
 pip install -r requirements.txt
 ```
