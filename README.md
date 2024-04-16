@@ -32,11 +32,11 @@ Chat2Scenario is a web-based tool that allows users to search for specific drivi
 git clone https://github.com/zhaoyongqi2022/Chat2Scenario.git 
 ```
 ### Install all required packages
-#### method 1, in your original environment
+#### method 1 - in your original environment
 ```bash
 pip install -r requirements.txt
 ```
-#### create a new environment through conda env
+#### Method 2 - create a new environment through yml file
 ```bash
 conda env create -f environment.yml
 conda activate chat2scenario
