@@ -30,7 +30,7 @@ def DST(egoVehData, tgtVehData):
     frameList = []
     dstList = []
     # tranversal both dataframes synchronously
-    for (index1, egoRow), (index2, tgtRow) in zip(egoVehData.iterrows(), tgtVehData.iterrows()):
+    for (index1, egoRow), (index2, tgtRow) in zip(egoVehData.iterrows(), tgtVehData[0].iterrows()):
         currFrame = egoRow['frame']
         frameList.append(currFrame)
         v1 = egoRow['xVelocity']
@@ -93,7 +93,7 @@ def RLoA(egoVehData, tgtVehData):
     frameList = []
     RLoAList = []
     # tranversal both dataframes synchronously
-    for (index1, egoRow), (index2, tgtRow) in zip(egoVehData.iterrows(), tgtVehData.iterrows()):
+    for (index1, egoRow), (index2, tgtRow) in zip(egoVehData.iterrows(), tgtVehData[0].iterrows()):
         currFrame = egoRow['frame']
         frameList.append(currFrame)
         x1 = egoRow['x']
@@ -151,7 +151,7 @@ def RLaA(egoVehData, tgtVehData):
     frameList = []
     RLaAList = []
     # tranversal both dataframes synchronously
-    for (index1, egoRow), (index2, tgtRow) in zip(egoVehData.iterrows(), tgtVehData.iterrows()):
+    for (index1, egoRow), (index2, tgtRow) in zip(egoVehData.iterrows(), tgtVehData[0].iterrows()):
         currFrame = egoRow['frame']
         frameList.append(currFrame)
         v2_lat = tgtRow['yVelocity']
