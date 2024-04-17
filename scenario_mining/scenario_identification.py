@@ -213,6 +213,8 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
     # 3. Target position
     for key in latActDict:
         scenarioList = []
+        if key == 37:
+            print('hello')
 
         # Current ego vehicle and interacting targets
         curr_ego = key # current ego id
@@ -242,7 +244,7 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
             # Current ego info
             curr_ego_start_row = tracks_36[(tracks_36['id'] == curr_ego) & (tracks_36['frame'] == inter[0])].reset_index(drop=True)
             curr_ego_end_row = tracks_36[(tracks_36['id'] == curr_ego) & (tracks_36['frame'] == inter[1])].reset_index(drop=True)
-            curr_ego_life = tracks_36[(tracks_36['id'] == curr_ego)].reset_index(drop=True)
+            curr_ego_life = tracks_36[(tracks_36['id'] == curr_ego)& tracks_36['frame'].between(inter[0], inter[1])].reset_index(drop=True)
             # Current target info
             curr_tgt_start_row = tracks_36[(tracks_36['id'] == curr_interact_tgt) & (tracks_36['frame'] == inter[0])].reset_index(drop=True)
             curr_tgt_end_row = tracks_36[(tracks_36['id'] == curr_interact_tgt) & (tracks_36['frame'] == inter[1])].reset_index(drop=True)
@@ -354,50 +356,51 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
 #     'Target behavior': {'target longitudinal activity': ['NA'], 
 #     'target lateral activity': ['lane change right']}}}
 
-#     # # 4. left evasion
-#     # left_evasion = {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
-#     # 'Ego lateral activity': ['lane change left']}, 
-#     # 'Target Vehicle #1': {'Target start position': {'same lane': ['front']}, 
-#     # 'Target end position': {'adjacent lane': ['right adjacent lane']}, 
-#     # 'Target behavior': {'target longitudinal activity': ['NA'], 
-#     # 'target lateral activity': ['follow lane']}}}
+    # # 4. left evasion
+    # left_evasion = {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
+    # 'Ego lateral activity': ['lane change left']}, 
+    # 'Target Vehicle #1': {'Target start position': {'same lane': ['front']}, 
+    # 'Target end position': {'adjacent lane': ['right adjacent lane']}, 
+    # 'Target behavior': {'target longitudinal activity': ['NA'], 
+    # 'target lateral activity': ['follow lane']}}}
 
-#     # right_evasion = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
-#     # 'Ego lateral activity': ['follow lane']}, 
-#     # 'Target Vehicle #1': {'Target start position': {'same lane': ['behind']}, 
-#     # 'Target end position': {'adjacent lane': ['right']}, 
-#     # 'Target behavior': {'target longitudinal activity': ['acceleration'], 
-#     # 'target lateral activity': ['lane change right']}}}
+    # right_evasion = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
+    # 'Ego lateral activity': ['follow lane']}, 
+    # 'Target Vehicle #1': {'Target start position': {'same lane': ['behind']}, 
+    # 'Target end position': {'adjacent lane': ['right']}, 
+    # 'Target behavior': {'target longitudinal activity': ['acceleration'], 
+    # 'target lateral activity': ['lane change right']}}}
 
-#     # ## LLM Response
-#     # key_label = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
-#     # 'Ego lateral activity': ['follow lane']}, 
-#     # 'Target Vehicle #1': {'Target start position': {'adjacent lane': ['left adjacent lane']}, 
-#     # 'Target end position': {'same lane': ['front']}, 
-#     # 'Target behavior': {'target longitudinal activity': ['acceleration'], 
-#     # 'target lateral activity': ['lane change right']}}}
+    # ## LLM Response
+    # key_label = {'Ego Vehicle': {'Ego longitudinal activity': ['keep velocity'], 
+    # 'Ego lateral activity': ['follow lane']}, 
+    # 'Target Vehicle #1': {'Target start position': {'adjacent lane': ['left adjacent lane']}, 
+    # 'Target end position': {'same lane': ['front']}, 
+    # 'Target behavior': {'target longitudinal activity': ['acceleration'], 
+    # 'target lateral activity': ['lane change right']}}}
 
-#     ## Original track
-#     oriTracksDf = pd.read_csv("C:\\PhD\\Dataset\\highD\\data\\36_tracks.csv")
+    ## Original track
+    # oriTracksDf = pd.read_csv("C:\\PhD\\Dataset\\highD\\data\\36_tracks.csv")
 
-#     ## Vehicle activity
-#     with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\interactIdDict.pickle", 'rb') as handle:
-#         interactIdDict = pickle.load(handle)
-#     latActDict = pd.read_pickle("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\latActDict.pickle", compression=None)
-#     # with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\latActDict.pickle", 'rb') as handle:
-#     #     latActDict = pickle.load(handle)
-#     longActDict = pd.read_pickle("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\longActDict.pickle", compression=None)
-#     # with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\longActDict.pickle", 'rb') as handle:
-#     #     longActDict = pickle.load(handle)
+    # ## Vehicle activity
+    # with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\interactIdDict.pickle", 'rb') as handle:
+    #     interactIdDict = pickle.load(handle)
+    # latActDict = pd.read_pickle("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\latActDict.pickle", compression=None)
+    # # with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\latActDict.pickle", 'rb') as handle:
+    # #     latActDict = pickle.load(handle)
+    # longActDict = pd.read_pickle("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\longActDict.pickle", compression=None)
+    # # with open("C:\\PhD\\0_scenario_generation_IEEEIV_PaperAccepted\\Vehicle_Activity\\track_36_act\\longActDict.pickle", 'rb') as handle:
+    # #     longActDict = pickle.load(handle)
 
-#     progress_bar = st.progress(0)
-#     scenarioLists = mainFunctionScenarioIdentification(oriTracksDf, following, latActDict, longActDict, interactIdDict, progress_bar)
-#     # Saving the list
-#     with open('followingSce.pkl', 'wb') as file:
-#         pickle.dump(scenarioLists, file)
-#     numScenario = len(scenarioLists)
-#     print(f'{numScenario} scenarios are found!')
-#     print(scenarioLists)
+    # progress_bar = st.progress(0)
+    # scenarioLists = mainFunctionScenarioIdentification(oriTracksDf, cut_out_left, latActDict, longActDict, interactIdDict, progress_bar)
+    # numScenario = len(scenarioLists)
+    # print(f'{numScenario} scenarios are found!')
+    # print(scenarioLists)
+
+    # # Saving the list
+    # with open('.\pre_cutout_left.pkl', 'wb') as file:
+    #     pickle.dump(scenarioLists, file)
 
 #     # xosc_index = 1
 #     # for desired_scenario in scenarioLists:
