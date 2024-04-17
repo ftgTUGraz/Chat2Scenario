@@ -213,8 +213,6 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
     # 3. Target position
     for key in latActDict:
         scenarioList = []
-        if key == 37:
-            print('hello')
 
         # Current ego vehicle and interacting targets
         curr_ego = key # current ego id

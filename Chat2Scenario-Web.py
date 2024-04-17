@@ -176,7 +176,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 ## Scenario visualization
                 if len(st.session_state.my_data['desired_scenario']) != 0:
                     num_sce = len(st.session_state.my_data['desired_scenario'])
-                    print(f"{num_sce} scenairos are found!")
+                    reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
                     # Data preparation
                     fictive_ego_list = []
                     fictive_tgt_dict = dict()
@@ -196,6 +196,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                         fictive_tgt_dict[egoId] = tgtVehsData
                     anmation_holder = st.empty()
                     preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option)
+                else:
+                    reminder_holder.warning("No scenarios are selected from the pool. Try to reset the criticality metric/value.")
 
 
         # Extract button

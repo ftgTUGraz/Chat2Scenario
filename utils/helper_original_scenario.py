@@ -938,21 +938,23 @@ def if_scenario_within_threshold(metric_value_res, metric_threshold):
         min_threshold = metric_threshold[0]
         max_threshold = metric_threshold[1]
 
-        # Check if the rods are within the range
-        within_range = metric_values[(metric_values >= min_threshold) & (metric_values <= max_threshold)]
+        return ((metric_values >= min_threshold) & (metric_values <= max_threshold)).any()
 
-        percentage_within_range = len(within_range) / len(metric_values) * 100
+        # # Check if the rods are within the range
+        # within_range = metric_values[(metric_values >= min_threshold) & (metric_values <= max_threshold)]
 
-        # Desired coverage and confidence level
-        desired_coverage = 90  # 95%
+        # percentage_within_range = len(within_range) / len(metric_values) * 100
 
-        # Check if the actual percentage meets the desired coverage with the specified confidence level
-        if percentage_within_range >= desired_coverage:
-            print(f"{percentage_within_range:.2f}% of calculated metric values are within the specified range, which meets the requirement.")
-            return True
-        else:
-            print(f"{percentage_within_range:.2f}% of calculated metric values are within the specified range, which does NOT meet the requirement.")
-            return False
+        # # Desired coverage and confidence level
+        # desired_coverage = 90  # 95%
+
+        # # Check if the actual percentage meets the desired coverage with the specified confidence level
+        # if percentage_within_range >= desired_coverage:
+        #     print(f"{percentage_within_range:.2f}% of calculated metric values are within the specified range, which meets the requirement.")
+        #     return True
+        # else:
+        #     print(f"{percentage_within_range:.2f}% of calculated metric values are within the specified range, which does NOT meet the requirement.")
+        #     return False
 
     # If the metric_value_res in the format of "float"
     else:
