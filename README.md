@@ -62,7 +62,7 @@ conda activate chat2scenario
 	- Click "Preview searched scenario" to search for and preview scenarios. 
 	- Scenarios are ready for download when the prograss bar reaches 100%.
 - Download
-	- Specify the download path, e.g., C:\Users\ilovetug\Downloads.
+	- Specify the download path, e.g., C:\Users\ilovetug\Downloads\.
 	- Click "Extract original scenario" to download them. 
 - (Optional) Modify the path 
 	- If necessary, modify the path of RoadNetWork in the generated OpenSCENARIO.
