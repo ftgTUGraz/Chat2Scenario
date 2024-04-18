@@ -23,7 +23,7 @@ Chat2Scenario is a web-based tool that allows users to search for specific drivi
 ## Installation
 ### Pre-requirements
 - Python installation
-	- This repository is developed under python 3.9.16 in Anaconda.
+	- This repository is developed under python 3.9.19 in Anaconda.
 - Application for dataset
 	- The highD dataset can be applied via (https://levelxdata.com/highd-dataset/).
 - [OpenAI API key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key) 
