@@ -29,7 +29,7 @@ Chat2Scenario is a web-based tool that allows users to search for specific drivi
 - [OpenAI API key](https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key) 
 ### Clone this repository
 ```bash
-git clone https://github.com/zhaoyongqi2022/Chat2Scenario.git 
+git clone https://github.com/ftgTUGraz/Chat2Scenario.git 
 ```
 ### Install all required packages
 #### Method 1 - in your original environment
