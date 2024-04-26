@@ -12,11 +12,13 @@ Chat2Scenario is a web-based tool that allows users to search for specific drivi
 
 ## Citation
 ```bibtex
-@software{Chat2Scenario,
-  author = {{Zhao, Yongqi}, {Xiao, Wenbo}},
-  title = {{Chat2Scenario: Scenario Extraction From Dataset Through Utilization of Large Language Model}},
-  url = {https://github.com/zhaoyongqi2022/Chat2Scenario.git},
-  year = {2024}
+@misc{zhao2024chat2scenario,
+      title={Chat2Scenario: Scenario Extraction From Dataset Through Utilization of Large Language Model}, 
+      author={Yongqi Zhao and Wenbo Xiao and Tomislav Mihalj and Jia Hu and Arno Eichberger},
+      year={2024},
+      eprint={2404.16147},
+      archivePrefix={arXiv},
+      primaryClass={cs.RO}
 }
 ```
 
