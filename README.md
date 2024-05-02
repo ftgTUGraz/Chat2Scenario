@@ -87,8 +87,8 @@ Contributions are what make the open source community such an amazing place to b
 * Yongqi Zhao ([yongqi.zhao@tugraz.at](mailto:yongqizhao@tugraz.at))
 * Wenbo Xiao ([wenbo.xiao@student.tugraz.at](mailto:wenbo.xiao@student.tugraz.at))
 
-For help or issues using the code, please create an issue in this repository or contact Yongqi Zhao at [yongqi.zhao@tugraz.at](mailto:yongqi.zhao@tugraz.at). 
-You can also ask questions in our SLACK Workspace. **[Click here!]**(https://join.slack.com/t/chat2scenario/shared_invite/zt-2hwtat65j-c2EqeGGewDJpWRBpPUhNDw)
+For help or issues using the code, please create an issue in this repository or contact Yongqi Zhao at [yongqi.zhao@tugraz.at](mailto:yongqi.zhao@tugraz.at), contact Wenbo Xiao at [wenbo.xiao@student.tugraz.at](wenbo.xiao@student.tugraz.at). 
+You can also ask questions in our SLACK Workspace. **[Click here!](https://join.slack.com/t/chat2scenario/shared_invite/zt-2hwtat65j-c2EqeGGewDJpWRBpPUhNDw)**
 
 ## Acknowledgement
 - This work was supported by FFG in the research project PECOP (FFG Projektnummer 893988) in the program "Bilateral Cooperation Austria - People's Republic of China/Most 2nd Call".
