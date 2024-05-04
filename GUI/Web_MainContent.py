@@ -658,6 +658,11 @@ def check_upload_csv(dataset_load, dataset_option):
                             "precedingId", "followingId", "leftPrecedingId", "leftAlongsideId",\
                                 "leftFollowingId", "rightPrecedingId", "rightAlongsideId", "rightFollowingId",\
                                     "laneId"]
+    # expected format of Ind Aachen 
+    Aachen_Ind_format = ["recordingId", "trackId", "frame", "trackLifetime", "xCenter", "yCenter", "heading",\
+                          "width", "length", "xVelocity", "yVelocity", "xAcceleration", "yAcceleration",\
+                             "lonVelocity", "latVelocity", "lonAcceleration", "latAcceleration"]
+
 
     # try to read csv, warning if error 
     try:
@@ -672,8 +677,10 @@ def check_upload_csv(dataset_load, dataset_option):
     expected_format = []
     if dataset_option == "AD4CHE":
         expected_format = DJI_format
-    if dataset_option == "highD" or dataset_option == "inD" or dataset_option == "roundD" or dataset_option == "exitD" or dataset_option == "uniD":
+    if dataset_option == "highD" or dataset_option == "roundD" or dataset_option == "exitD" or dataset_option == "uniD":
         expected_format = Aachen_format
+    elif dataset_option == "inD":
+        expected_format = Aachen_Ind_format
     
     # compare current and expected format
     curr_format = column_names

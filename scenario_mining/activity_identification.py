@@ -300,8 +300,8 @@ def main_fcn_veh_activity(tracks, progress_bar):
         tracks (df): a dataframe containing vehicle trajectory, which can be load by pd.read_csv()
 
     Returns:
-        longActDict (dict): a dictionary containing longitudinal activites id: df['frame', 'id', 'LongitudinalActivity', 'lateral', 'x', 'y']
-        latActDict (dict): a dictionary containing lateral activites id: df['frame', 'id', 'LateralActivity', 'lateral', 'x', 'y']
+        longActDict (dict): a dictionary containing longitudinal activites id: df['frame', 'id', 'LongitudinalActivity', 'x', 'y']
+        latActDict (dict): a dictionary containing lateral activites id: df['frame', 'id', 'LateralActivity', 'x', 'y']
         interactIdDict (dict): a dictionary containing fictive ego vehicles and correspondong target vehicles id: df[id1, id2, id3,...]
     ---------
     """
@@ -356,3 +356,69 @@ def main_fcn_veh_activity(tracks, progress_bar):
     print(f'It takes {end_time-start_time} seconds!')
     return longActDict, latActDict, interactIdDict
 
+def get_vehicle_activity_at_junctions(tracks, progress_bar, junctions_data):
+    """
+    Get vehicle activity at junctions.
+
+    Parameters:
+    ----------
+    Inputs:
+        tracks (df): a dataframe containing vehicle trajectory, which can be loaded by pd.read_csv()
+        progress_bar (object): progress bar object to display progress
+        junctions_data (list): a list containing junctions data, each item in the list represents a junction
+
+    Returns:
+    ----------
+    Returns:
+        junctions_activity_dict (dict): a dictionary containing vehicle junctions activity id: df['frame', 'id', 'JunctionsActivity', 'x', 'y']
+    """
+    # Initialize dictionary to store results
+    junctions_activity_dict = dict()
+
+    # Extract desired activities
+    start_time = time.time()
+    unique_ids = tracks['id'].unique()
+    index = 0
+    for unique_id in unique_ids:
+        # Update progress bar
+        progress = int((index + 1) / len(unique_ids) * 100)
+        progress_bar.progress(progress)
+
+        # Current vehicle
+        vehicle_id = unique_id
+        vehicle_data = tracks[tracks['id'] == vehicle_id]
+
+        # Initialize junction activity
+        junction_activity = None
+
+        # Check if vehicle passes through any junction
+        for junction_data in junctions_data:
+            junction_id = junction_data['id']
+            junction_polygon = junction_data['polygon']
+            # Check if any point of the vehicle trajectory is within the junction polygon
+            for _, frame_data in vehicle_data.iterrows():
+                x = frame_data['x']
+                y = frame_data['y']
+                point_within_polygon = junction_polygon.contains(Point(x, y))
+                if point_within_polygon:
+                    junction_activity = junction_id
+                    break
+            if junction_activity:
+                break
+
+        # If vehicle passes through a junction, set junction activity
+        if junction_activity:
+            vehicle_data['JunctionsActivity'] = junction_activity
+            junctions_activity_dict[vehicle_id] = vehicle_data[['frame', 'id', 'JunctionsActivity', 'x', 'y']]
+        # If vehicle doesn't pass through any junction, set activity as None
+        else:
+            junctions_activity_dict[vehicle_id] = vehicle_data[['frame', 'id', 'JunctionsActivity', 'x', 'y']]
+
+        # Update index
+        index += 1
+
+    # Complete the progress
+    progress_bar.progress(100)
+    end_time = time.time()
+    print(f'It takes {end_time-start_time} seconds!')
+    return junctions_activity_dict
