@@ -329,7 +329,7 @@ def process_equation(equation_input):
     return parased_equation_code
     
 
-def find_ax_limit(fictive_ego, fictive_targets):
+def find_ax_limit(fictive_ego, fictive_targets,dataset_option):
     """
     find the limitation to fix figure axis 
 
@@ -343,38 +343,55 @@ def find_ax_limit(fictive_ego, fictive_targets):
         y_min (float): y minimum
         y_max (float): y maximum
     """
-    ego_x_min = min(fictive_ego['x'])
-    ego_x_max = max(fictive_ego['x'])
-    ego_y_min = min(fictive_ego['y'])
-    ego_y_max = max(fictive_ego['y'])
+    if dataset_option == "highD":
+        ego_x_min = min(fictive_ego['x'])
+        ego_x_max = max(fictive_ego['x'])
+        ego_y_min = min(fictive_ego['y'])
+        ego_y_max = max(fictive_ego['y'])
 
-    fictive_target_x_min = float('inf')
-    fictive_target_x_max = float('-inf')
-    fictive_target_y_min = float('inf')
-    fictive_target_y_max = float('-inf')
+        fictive_target_x_min = float('inf')
+        fictive_target_x_max = float('-inf')
+        fictive_target_y_min = float('inf')
+        fictive_target_y_max = float('-inf')
 
-    for fictive_target in fictive_targets:
-        curr_x_min = min(fictive_target['x'])
-        if curr_x_min < fictive_target_x_min:
-            fictive_target_x_min = curr_x_min
+        for fictive_target in fictive_targets:
+            curr_x_min = min(fictive_target['x'])
+            if curr_x_min < fictive_target_x_min:
+                fictive_target_x_min = curr_x_min
 
-        curr_x_max = max(fictive_target['x'])
-        if curr_x_max > fictive_target_x_max:
-            fictive_target_x_max = curr_x_max
+            curr_x_max = max(fictive_target['x'])
+            if curr_x_max > fictive_target_x_max:
+                fictive_target_x_max = curr_x_max
 
-        curr_y_min = min(fictive_target['y'])
-        if curr_y_min < fictive_target_y_min:
-            fictive_target_y_min = curr_y_min
+            curr_y_min = min(fictive_target['y'])
+            if curr_y_min < fictive_target_y_min:
+                fictive_target_y_min = curr_y_min
 
-        curr_y_max = max(fictive_target['y'])
-        if curr_y_max > fictive_target_y_max:
-            curr_y_max = fictive_target_y_max
+            curr_y_max = max(fictive_target['y'])
+            if curr_y_max > fictive_target_y_max:
+                curr_y_max = fictive_target_y_max
 
-    x_min = min(ego_x_min, fictive_target_x_min)
-    x_max = max(ego_x_max, fictive_target_x_max)
-    y_min = min(ego_y_min, fictive_target_y_min)
-    y_max = max(ego_y_max, fictive_target_y_max)
+        x_min = min(ego_x_min, fictive_target_x_min)
+        x_max = max(ego_x_max, fictive_target_x_max)
+        y_min = min(ego_y_min, fictive_target_y_min)
+        y_max = max(ego_y_max, fictive_target_y_max)
 
+    elif dataset_option == "inD":  
+        ego_x_min = min(fictive_ego['xCenter'])
+        ego_x_max = max(fictive_ego['xCenter'])
+        ego_y_min = min(fictive_ego['yCenter'])
+        ego_y_max = max(fictive_ego['yCenter'])
+
+        tgt_x_min = min(min(fictive_target['xCenter']) for fictive_target in fictive_targets)
+        tgt_x_max = max(max(fictive_target['xCenter']) for fictive_target in fictive_targets)
+        tgt_y_min = min(min(fictive_target['yCenter']) for fictive_target in fictive_targets)
+        tgt_y_max = max(max(fictive_target['yCenter']) for fictive_target in fictive_targets)
+
+        x_min = min(ego_x_min, tgt_x_min)
+        x_max = max(ego_x_max, tgt_x_max)
+        y_min = min(ego_y_min, tgt_y_min)
+        y_max = max(ego_y_max, tgt_y_max)
+        
     return x_min, x_max, y_min, y_max
 
 
@@ -566,7 +583,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
     ## start preview process
     index = 1
     for fictive_ego in fictive_ego_list_sampled:
-        egoId = fictive_ego['id'][0]
+        #egoId = fictive_ego['id'][0]
         # print(f'Ego {egoId} start/end frame before alignment:')
         # print(fictive_ego['frame'][0])
         # print(fictive_ego['frame'].iloc[-1])
@@ -574,9 +591,12 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
         if fictive_ego.empty:
             continue
         reminder_holder.warning(f'Previewing {index}-th scenario.')
-        fictive_targets = fictive_target_dicts_sampled[fictive_ego['id'][0]]
-        for fictive_target in fictive_targets:
-            tgtId = fictive_target['id'][0]
+        if dataset_option == "highD":
+            fictive_targets = fictive_target_dicts_sampled[fictive_ego['id'][0]]
+        elif dataset_option == "inD":   
+            fictive_targets = fictive_target_dicts_sampled[fictive_ego['trackId'][0]] 
+        #for fictive_target in fictive_targets:
+        #    tgtId = fictive_target['id'][0]
             # print(f'Target {tgtId} start/end frame before alignment:')
             # print(fictive_target['frame'][0])
             # print(fictive_target['frame'].iloc[-1])
@@ -606,7 +626,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
             fictive_targets_common.append(fictive_target_common)
 
 
-        x_min, x_max, y_min, y_max = find_ax_limit(fictive_ego_common, fictive_targets_common)
+        x_min, x_max, y_min, y_max = find_ax_limit(fictive_ego_common, fictive_targets_common,dataset_option)
         fig, ax = plt.subplots(figsize=(7,3))
         ani = animation.FuncAnimation(fig, animate, frames=len(fictive_ego_common), repeat=True)
         ani.save("animation.gif", writer='pillow', fps=5)
