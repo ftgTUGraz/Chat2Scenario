@@ -530,12 +530,20 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
 
         ## ego
         # ego dimension
-        ego_width = fictive_ego_common['width'][i]
-        ego_height = fictive_ego_common['height'][i]
-        # trajectory
-        ax.plot(fictive_ego_common['x'][:i], fictive_ego_common['y'][:i], color = 'red', marker='.', label='fictive ego')
-        ego_x = fictive_ego_common['x'][i]
-        ego_y = fictive_ego_common['y'][i]
+
+        if dataset_option == "highD":
+            ego_width = fictive_ego_common['width'][i]
+            ego_height = fictive_ego_common['height'][i]
+            # trajectory
+            ax.plot(fictive_ego_common['x'][:i], fictive_ego_common['y'][:i], color = 'red', marker='.', label='fictive ego')
+            ego_x = fictive_ego_common['x'][i]
+            ego_y = fictive_ego_common['y'][i]
+        elif dataset_option == "inD": 
+            ego_width = fictive_ego_common['width'][i]
+            ego_height = fictive_ego_common['length'][i]
+            ax.plot(fictive_ego_common['xCenter'][:i], fictive_ego_common['yCenter'][:i], color = 'red', marker='.', label='fictive ego')
+            ego_x = fictive_ego_common['xCenter'][i]
+            ego_y = fictive_ego_common['yCenter'][i]
         # fit orientation to dataset
         if dataset_option == "AD4CHE":
             ego_orientation = fictive_ego_common['orientation'][i]
@@ -552,11 +560,16 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
         ## target
         for target_common in fictive_targets_common:
             # target dimension
-            target_width = target_common['width'][i]
-            target_height = target_common['height'][i]
-            target_x = target_common['x'][i]
-            target_y = target_common['y'][i]
-
+            if dataset_option == "highD":
+                target_width = target_common['width'][i]
+                target_height = target_common['height'][i]
+                target_x = target_common['x'][i]
+                target_y = target_common['y'][i]
+            elif dataset_option == "inD": 
+                target_width = target_common['width'][i]
+                target_height = target_common['length'][i]
+                target_x = target_common['xCenter'][i]
+                target_y = target_common['yCenter'][i]
             # fit orientation to dataset
             if dataset_option == "AD4CHE":
                 target_orientation = target_common['orientation'][i]
