@@ -5,37 +5,107 @@ from matplotlib.patches import PathPatch
 from matplotlib.path import Path
 import numpy as np
 import pandas as pd
+import pickle
+
+def save_road_lane_paths_pickle(road_lane_paths, file_path):
+    """
+    Save road lane paths data to a pickle file.
+
+    Parameters:
+    ----------
+    road_lane_paths (dict): A dictionary containing the road lane paths data.
+    file_path (str): The path to the file where the data will be saved.
+
+    Returns:
+    ----------
+    None: This function does not return any value.
+    """
+    with open(file_path, 'wb') as file:
+        pickle.dump(road_lane_paths, file)
+
+
+def load_road_lane_paths_pickle(file_path):
+    """
+    Load road lane paths data from a pickle file.
+
+    Parameters:
+    ----------
+    file_path (str): The path to the file from which the data will be loaded.
+
+    Returns:
+    ----------
+    dict: The loaded road lane paths data, or None if an error occurs.
+    """
+    try:
+        with open(file_path, 'rb') as file:
+            data = pickle.load(file)
+        return data
+    except FileNotFoundError:
+        print("File not found. Please check the path.")
+        return None
+    except Exception as e:
+        print("An error occurred:", e)
+        return None
 
 def calculate_width(ds, a, b, c, d):
-    """ Calculate the width based on polynomial coefficients and distance along the road """
+    """
+    Calculate the width of a lane at a specific distance along the road using a cubic polynomial.
+
+    Parameters:
+    ----------
+    ds (float): Distance along the road from the starting point.
+    a (float): Constant term of the polynomial.
+    b (float): Coefficient of the linear term.
+    c (float): Coefficient of the squared term.
+    d (float): Coefficient of the cubic term.
+
+    Returns:
+    ----------
+    float: Calculated width at distance ds.
+    """
     return a + b * ds + c * (ds**2) + d * (ds**3)
 
 def find_two_nearest_endpoints_per_road(x_endpoints, y_endpoints, road_ids):
-    num_roads = len(set(road_ids))  # 道路的数量
-    unique_road_ids = set(road_ids)  # 创建集合，移除重复项，无序
-    sorted_road_ids = sorted(unique_road_ids)  # 对集合中的元素排序
+    """
+    Identify the two nearest endpoints for each road based on provided coordinates.
+
+    Parameters:
+    ----------
+    x_endpoints (list): List of x-coordinates for road endpoints.
+    y_endpoints (list): List of y-coordinates for road endpoints.
+    road_ids (list): List of road IDs corresponding to each endpoint.
+
+    Returns:
+    ----------
+    tuple: Contains two elements:
+        1. A dictionary mapping each road ID to a list of the two nearest endpoint indices.
+        2. A list of polygon junction points derived from these nearest endpoints.
+    """
+    num_roads = len(set(road_ids))  # Number of roads
+    unique_road_ids = set(road_ids)  # Create a set to remove duplicates, unordered
+    sorted_road_ids = sorted(unique_road_ids)  # Sort the elements of the set
     nearest_endpoints_per_road = {str(road_id): [] for road_id in sorted_road_ids}
 
     for i in range(len(x_endpoints)):
-        current_road_id = str(road_ids[i])  # 使用字符串类型作为键
+        current_road_id = str(road_ids[i])  # Use string type as the key
         nearest_distances = sorted(
             [(j, math.sqrt((x_endpoints[i] - x_endpoints[j])**2 + (y_endpoints[i] - y_endpoints[j])**2))
             for j in range(len(x_endpoints)) if str(road_ids[j]) != current_road_id],
             key=lambda x: x[1]
         )
 
-        # 为每条道路记录最近的两个端点，包括距离
+        # Record the two nearest endpoints for each road, including distance
         if nearest_distances:
             nearest_endpoints_per_road[current_road_id].append((i, nearest_distances[0][0], nearest_distances[0][1]))
 
-    # 确保选择的两个端点不是同一个起始端点
+    # Ensure the selected two endpoints are not the same starting point
     two_nearest_endpoints_per_road = {}
     polygan_jonctions = []
     cpt = 1
     for road_id, endpoints_info in nearest_endpoints_per_road.items():
         unique_indices = set()
         selected_endpoints = []
-        for info in sorted(endpoints_info, key=lambda x: x[2]):  # 按距离排序
+        for info in sorted(endpoints_info, key=lambda x: x[2]):  # Sort by distance
             if info[0] not in unique_indices:
                 selected_endpoints.append(info)
                 unique_indices.add(info[0])
@@ -56,24 +126,48 @@ def find_two_nearest_endpoints_per_road(x_endpoints, y_endpoints, road_ids):
     return two_nearest_endpoints_per_road , polygan_jonctions
 
 def connect_nearest_endpoints(two_nearest_endpoints_per_road, road_endpoint_ids):
-    # 用于存储连接的集合，格式为：(endpoint_index, connected_endpoint_index)
+
+    """
+    Connect nearest endpoints for each road to form a continuous path.
+
+    Parameters:
+    ----------
+    two_nearest_endpoints_per_road (dict): Dictionary containing mapping from road ID to nearest endpoint indices.
+    road_endpoint_ids (list): List of road IDs corresponding to each endpoint.
+
+    Returns:
+    ----------
+    list: List of tuples representing connected endpoint indices.
+    """
+    # Collection for storing connections, formatted as: (endpoint_index, connected_endpoint_index)
     connections = []
-    connected_indices = set()  # 用来存储已经连接过的端点
+    connected_indices = set()  # Used to store already connected endpoints
     
-    # 遍历每条道路的两个最近端点
+    # Iterate through the two nearest endpoints for each road
     for road_id, endpoints_info in two_nearest_endpoints_per_road.items():
         for endpoint_info in endpoints_info:
             start_index, end_index, _ = endpoint_info
-            # 检查端点是否已经被连接过
+            # Check if the endpoints have already been connected
             if start_index not in connected_indices and end_index not in connected_indices:
                 connections.append((start_index, end_index))
-                connected_indices.update([start_index, end_index])  # 添加端点到已连接集合中
+                connected_indices.update([start_index, end_index])  # Add endpoints to the connected set
     
     return connections
 
 
 
 def process_opendrive_file(filepath):
+    """
+    Process an OpenDRIVE file to extract and visualize road and lane data.
+
+    Parameters:
+    ----------
+    filepath (str): Path to the OpenDRIVE file.
+
+    Returns:
+    ----------
+    dict: Dictionary containing road and lane path data.
+    """
     tree = ET.parse(filepath)
     root = tree.getroot()
     previous_lane_coords ={}
@@ -83,7 +177,7 @@ def process_opendrive_file(filepath):
     y_endpoints = []
     road_endpoint_ids = []
 
-    # 提取关心的道路ID列表
+    # Extract a list of road IDs of interest
     road_ids_of_interest = {'0', '1', '3', '4'}
 
     for road in root.findall('road'):
@@ -96,8 +190,8 @@ def process_opendrive_file(filepath):
                 param_poly3 = geometry.find('.//paramPoly3')
 
                 if param_poly3 is not None:
-                    #等到遇到param_poly3类型且一条road中不止两条lane的时候再补充
-                    #如果遇到param_poly3类型且一条road中两条lane的时候可以用FrenetToGlobal_jonctions.py这个代码
+                    # Additional processing when encountering paramPoly3 type with more than two lanes in a road
+                    # Use FrenetToGlobal_jonctions.py script when encountering paramPoly3 type with two lanes in a road
                     print("This is a paramPoly3 type geometry.")
                 else:
                     print("This is a line type geometry.")
@@ -142,7 +236,7 @@ def process_opendrive_file(filepath):
                                 if lane_type == "driving":
                                     driving_lanes.append((lane_id, width_data))
 
-                        # 对车道按照ID进行排序，负数ID递减，正数ID递增
+                        # Sort lanes by ID, negative IDs decreasing, positive IDs increasing
                         driving_lanes.sort(key=lambda x: x[0])
                         positive_lanes = sorted((lane for lane in lanes_data if lane[0] > 0), key=lambda x: x[0])
     
@@ -150,7 +244,7 @@ def process_opendrive_file(filepath):
 
                         min_lane_id, max_lane_id = driving_lanes[0][0], driving_lanes[-1][0]
 
-                        # 处理排序后的车道数据
+                        # Process sorted lane data
                         accumulated_widths = np.zeros(len(points))
                         accumulated_widths2 = np.zeros(len(points))
                         for lanes_data in [positive_lanes, negative_lanes]:
@@ -189,18 +283,18 @@ def process_opendrive_file(filepath):
                                 previous_lane_coords[int(road_id)][lane_id] = (lane_line_x, lane_line_y)
 
 
-    # 创建多边形补丁
+    # Create polygon patches
     for road_id, lanes in previous_lane_coords.items():
         lane_ids = sorted(lanes.keys())
         for i in range(len(lane_ids) - 1):
             lane_id = lane_ids[i]
-            #人为设置数字最小lane是1
+            # Artificially set the minimum lane number as 1
             lane_id_call = i + 1
             next_lane_id = lane_ids[i + 1]
             current_lane_x, current_lane_y = lanes[lane_id]
             next_lane_x, next_lane_y = lanes[next_lane_id]
 
-            # 创建多边形路径
+            # Create polygon paths
             path_vertices = list(zip(current_lane_x, current_lane_y)) + list(zip(reversed(next_lane_x), reversed(next_lane_y)))
             codes = [Path.MOVETO] + [Path.LINETO] * (len(path_vertices) - 2) + [Path.CLOSEPOLY]
             path = Path(path_vertices, codes)
@@ -209,25 +303,25 @@ def process_opendrive_file(filepath):
 
             road_lane_paths[int(road_id)][lane_id_call] = path
 
-     # 计算每条道路与其他道路最近的两个端点
+    # Calculate the two nearest endpoints for each road with other roads
     two_nearest_endpoints_per_road , polygan_jonctions = find_two_nearest_endpoints_per_road(x_endpoints, y_endpoints, road_endpoint_ids)
 
-    # 创建连接
+    # Create connections
     connections = connect_nearest_endpoints(two_nearest_endpoints_per_road, road_endpoint_ids)
 
-    # 绘制连接
+    # Draw connection points
     for connection in connections:
         plt.plot([x_endpoints[connection[0]], x_endpoints[connection[1]]],
                 [y_endpoints[connection[0]], y_endpoints[connection[1]]], 'r-')
 
-    # 绘制用于连接的端点
+    # Draw connection points
     for road_id, nearest_endpoints in two_nearest_endpoints_per_road.items():
         for endpoint_info in nearest_endpoints:
             endpoint_index = endpoint_info[0]
             plt.scatter(x_endpoints[endpoint_index], y_endpoints[endpoint_index], c='blue')
 
-    # 创建jonctions的polygan
-    # 创建多边形顶点列表，确保是二维的
+    # Create polygon for junctions
+    # Create a list of polygon vertices, ensuring it is two-dimensional
     path_vertices = polygan_jonctions
     codes = [Path.MOVETO] + [Path.LINETO] * (len(path_vertices) - 2) + [Path.CLOSEPOLY]
     path = Path(path_vertices, codes)
@@ -249,43 +343,93 @@ def process_opendrive_file(filepath):
     return road_lane_paths
 
 def find_lane_by_coordinates(road_lane_paths, x, y):
+
+    """
+    Determine the road and lane ID at a given coordinate.
+
+    Parameters:
+    ----------
+    road_lane_paths (dict): Dictionary containing paths for each road and lane.
+    x (float): X-coordinate.
+    y (float): Y-coordinate.
+
+    Returns:
+    ----------
+    tuple: Contains road ID and lane ID if found, otherwise (-1, 1).
+    """
+
     """ Given a point (x, y), determine the road and lane ID it belongs to. """
     for road_id, lanes in road_lane_paths.items():
         for lane_id, path in lanes.items():
             if path.contains_point((x, y)):
                 return road_id, lane_id
-    return -1, 1  # 如果没有找到匹配的车道，返回 -1,1，这里代表在jonctions中
+    return -1, 1  # Return -1, 1 if no matching lane is found, which typically indicates the point is within a junction.
 
-def update_tracks_with_lane_info(csv_path, opendrive_file_path):
-    # 读取 CSV 文件
+def update_tracks_with_lane_info(csv_path):
+
+    """
+    Extracts the road ID from a combined 'road.lane' string.
+
+    Parameters:
+    ----------
+    road_lane (str): String in the format 'road.lane'.
+
+    Returns:
+    ----------
+    int: Extracted road ID or None if the format is incorrect.
+    """
+    # Read the CSV file
     tracks_meta_df = pd.read_csv(csv_path)
 
-    # 处理 OpenDRIVE 文件
-    road_lane_paths = process_opendrive_file(opendrive_file_path)
+    # Process the OpenDRIVE file to get road and lane path data
+    #road_lane_paths = process_opendrive_file(opendrive_file_path)
+    #save_road_lane_paths_pickle(road_lane_paths, 'bendplatz_01.pkl')
+    file_path = 'bendplatz_01.pkl'
+    road_lane_paths = load_road_lane_paths_pickle(file_path)    
 
-    # 新增列
+    # Add a new column for road-lane information
     tracks_meta_df['road_lane'] = ''
 
-    # 逐行处理 DataFrame
+    # Process each row in the DataFrame
     for index, row in tracks_meta_df.iterrows():
         x, y = row['xCenter'], row['yCenter']
         road_id, lane_id = find_lane_by_coordinates(road_lane_paths, x, y)
         tracks_meta_df.at[index, 'road_lane'] = f'{road_id}.{lane_id}'
 
-    # 保存修改后的 DataFrame
+    # Optionally, save the modified DataFrame to a new CSV file
     #updated_csv_path = csv_path.replace('.csv', '_updated.csv')
     #tracks_meta_df.to_csv(updated_csv_path, index=False)
 
-    # 返回更新后的 DataFrame 路径
+    # Return the updated DataFrame
     return tracks_meta_df
 
-import pandas as pd
-
 def extract_road_id(road_lane):
+    """
+    Determines the type of turn based on road IDs before and after a specific segment.
+
+    Parameters:
+    ----------
+    path (list): List of road.lane strings representing a vehicle's path.
+
+    Returns:
+    ----------
+    str: Type of turn ('straight', 'right', 'left', or 'N/A' if not applicable).
+    """
     """ Extracts the road ID from a 'road.lane' string. """
     return int(road_lane.split('.')[0]) if '.' in road_lane else None
 
 def determine_turn_type(path):
+    """
+    Determines the type of turn based on road IDs before and after a specific segment.
+
+    Parameters:
+    ----------
+    path (list): List of road.lane strings representing a vehicle's path.
+
+    Returns:
+    ----------
+    str: Type of turn ('straight', 'right', 'left', or 'N/A' if not applicable).
+    """
     """ Determines the turning type based on road IDs before and after '100.1'. """
     # Convert path elements to strings for consistent comparison
     path = [str(item) for item in path]
@@ -311,6 +455,17 @@ def determine_turn_type(path):
 
 
 def process_tracks(df):
+    """
+    Process tracks to determine the type of turn at junctions based on road lane paths.
+
+    Parameters:
+    ----------
+    df (DataFrame): DataFrame containing track data.
+
+    Returns:
+    ----------
+    DataFrame: DataFrame with updated turn type information.
+    """
     #df = pd.read_csv(file_path)
     df.sort_values(by=['trackId', 'frame'], inplace=True)
     grouped = df.groupby('trackId')['road_lane'].apply(list).reset_index()
