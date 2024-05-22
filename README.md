@@ -73,6 +73,9 @@ conda activate chat2scenario
     <LogicFile filepath="../xodr/highD_01_highway.xodr"/>
 </RoadNetwork>
 ```
+- Visualization
+	- Visualize the xosc in Esmini based on the [userguide](https://esmini.github.io/#_view_a_scenario)
+	- Visualize the txt file in CarMaker based on the [Q&A](https://www.ipg-automotive.com/en/support/support-request/faq/usage-of-user-inputs-from-a-file-in-a-maneuver-133/) 
 
 ## Contributing
 Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are greatly appreciated.
