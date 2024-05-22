@@ -163,7 +163,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                         st.session_state.my_data['tracks_original'] = tracks_original
                         # Calculate all vehicles' longitudinal and lateral activity
                         reminder_holder.warning(':running: Start analyze the vehicle activity...')
-                        longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar)
+                        longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar,dataset_option)
                     
                     # if key_label != None:
                         # Search correspondong scenarios from dictionary based on the key labels
