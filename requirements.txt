@@ -10,9 +10,9 @@ jsonschema==4.22.0
 jsonschema-specifications==2023.12.1
 markdown-it-py==3.0.0
 markupsafe==2.1.5
-matplotlib=3.8.0
-matplotlib-base=3.8.0
-matplotlib-inline=0.1.6
+matplotlib==3.8.0
+matplotlib-base==3.8.0
+matplotlib-inline==0.1.6
 mdurl==0.1.2
 numpy==1.26.4
 pandas==2.2.2
