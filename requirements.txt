@@ -67,8 +67,8 @@ matplotlib
 matplotlib-inline 
 mdurl
 mistune 
-mkl-fft==1.3.8 
-mkl-random==1.2.4 
+mkl_fft==1.3.8 
+mkl_random==1.2.4 
 mkl-service==2.4.0
 mpmath 
 multidict==6.0.5
