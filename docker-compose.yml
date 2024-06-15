@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  chat2scenario:
+    image: chat2scenario
+    build:
+      context: .
+      dockerfile: ./Dockerfile
