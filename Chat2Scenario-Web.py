@@ -17,6 +17,7 @@ from utils.prompt_engineering import *
 from NLP.Scenario_Description_Understand import *
 from scenario_mining.activity_identification import *
 from scenario_mining.scenario_identification import *
+import zipfile
 # from API.Call_API import *
 
 # *****************************************************************************************************************************************
@@ -97,8 +98,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
             st.write(":x: Metric is not selected:")
         # xosc or txt
         selected_opts = st.selectbox(":bookmark_tabs: Select desired format:", ['xosc', 'txt'])
-        # output path
-        output_path = st.text_input(label=":file_folder: Enter your download path:", help="Please copy your desired download path.")
+        # # output path
+        # output_path = st.text_input(label=":file_folder: Enter your download path:", help="Please copy your desired download path.")
         # scenario description using naturlistic language from user
         scenario_description = st.text_area(":bulb: Please describe your desired scenarios:", height=15,\
                                             placeholder="To be decided... ...")
@@ -199,10 +200,10 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 else:
                     reminder_holder.warning("No scenarios are selected from the pool. Try to reset the criticality metric/value.")
 
-
         # Extract button
         if extract_btn:  
-            extract = check_extract_condition(dataset_load, selected_opts, output_path, metric_threshold)
+            extract = check_extract_condition(dataset_load, selected_opts, metric_threshold)
+            xosc_files = []
             if extract and csv_format:
                 oriTracksDf = st.session_state.my_data['tracks_original']
                 progress_bar_format = st.progress(0)
@@ -211,6 +212,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 reminder_holder.warning("Start to generate OpenSCENARIO/text files...")
                 # List: [[egoVehID, [tgtVehID,...], startFrame, endFrame],[],[]...]
                 desired_scenarios = st.session_state.my_data['desired_scenario']
+                # Initialize xosc files
                 xosc_index = 1
                 for desired_scenario in desired_scenarios:
                     print(desired_scenario)
@@ -258,33 +260,38 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
 
                     # Create input for "xosc_generation" and "IPG_CarMaker_text_generation"
                     sim_time = len(egoVehTraj_common)/25
-                    output_path_xosc = output_path + '\\' + f'Chat2Scenario_xosc_{xosc_index}.xosc'
-                    output_path_text = output_path + '\\' + f'Chat2Scenario_text_{xosc_index}.txt'
+                    # output_path_xosc = output_path + '\\' + f'Chat2Scenario_xosc_{xosc_index}.xosc'
+                    # output_path_text = output_path + '\\' + f'Chat2Scenario_text_{xosc_index}.txt'
                     ego_track = egoVehTraj_common
                     tgt_tracks = tgtVehTrajs_common
                     
-
                     if selected_opts == "xosc":
-                        xosc_generation(sim_time, output_path_xosc, ego_track, tgt_tracks)
-                    # Generate IPG CarMaker text file
-                    if selected_opts == "txt":
-                        IPG_CarMaker_text_generation(output_path_text, ego_track, tgt_tracks)
-                    
+                        pretty_xml_string = xosc_generation(sim_time, ego_track, tgt_tracks)
+                        xosc_files.append(pretty_xml_string)
+                        
+                    # if selected_opts == "txt":
+                    #     IPG_CarMaker_text_generation(output_path_text, ego_track, tgt_tracks)
+                             
+            reminder_holder.warning("All files are successfully generated. Click the button below to download.")
+            # Create a BytesIO buffer for the ZIP file
+            zip_buffer = BytesIO()
+
+            # Create a ZIP file
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for index, curr_xosc in enumerate(xosc_files):
+                    zf.writestr(f"scenario_{index}.xosc", curr_xosc)
+
+            # Move the pointer to the beginning of the BytesIO buffer
+            zip_buffer.seek(0)
+
+            # Create a download button
+            st.download_button(
+                label="Download",
+                data=zip_buffer,
+                file_name="scenarios.zip",
+                mime="application/zip"
+            )
             
-                reminder_holder.warning("All OpenSCENARIO/text files are successfully generated...")
-
-
-    # ## Scenario variation: maybe better to combine with unknown & unsafe scenarios 
-    # st.subheader(":clapper: Scenario variation")
-    # col1_var, col2_var = st.columns(2)
-
-    # # Set new value for metric
-    # with col1_var:        
-    #     st.warning(":man-lifting-weights: Coming soon...")
-
-    # # Preview searched scenarios
-    # with col2_var: 
-    #     st.warning(":man-lifting-weights: Coming soon...")
 
 # Compitable with more datasets is to be done
 else:

@@ -422,7 +422,7 @@ def check_preview_condition(reminder_holder, dataset_load, metric_option, metric
     return meet_preview_conditions
 
 
-def check_extract_condition(dataset_load, selected_opts, output_path, metric_threshold):
+def check_extract_condition(dataset_load, selected_opts, metric_threshold):
     """
     Check if meet extract conditions
 
@@ -446,13 +446,10 @@ def check_extract_condition(dataset_load, selected_opts, output_path, metric_thr
     elif dataset_load is None and len(selected_opts) == 0:
         extract = False
         st.warning(":warning: Please make sure **upload dataset** and **select format** before extracting scenarios!")
-    elif not output_path:
-        extract = False
-        st.warning(":warning: Please specify **download path**!")
     elif math.isnan(metric_threshold[0]) or math.isnan(metric_threshold[1]):
         extract = False
         st.warning(":warning: Please specify **metric threshold**!")
-    elif dataset_load and len(selected_opts) > 0 and output_path and metric_threshold is not None:
+    elif dataset_load and len(selected_opts) > 0 and  metric_threshold is not None:
         extract = True
     
     return extract
