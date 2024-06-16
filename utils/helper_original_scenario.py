@@ -169,13 +169,12 @@ def add_everything(object_track, entities, cataref, init, act):
     act.add_maneuver_group(manGroup)
 
 
-def xosc_generation(sim_time, output_path, ego_track, target_tracks_sampled):
+def xosc_generation(sim_time, ego_track, target_tracks_sampled):
     """
     create xosc file
 
     Args:
         sim_time (double): Duration of simulation time.
-        output_path (path): Path of output file.
         ego_track (dataframe): Fictive ego vehicle track
         target_tracks_sampled (list): Fictive target vehicle track
     """

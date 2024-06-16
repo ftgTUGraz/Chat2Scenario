@@ -98,8 +98,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
             st.write(":x: Metric is not selected:")
         # xosc or txt
         selected_opts = st.selectbox(":bookmark_tabs: Select desired format:", ['xosc', 'txt'])
-        # output path
-        output_path = st.text_input(label=":file_folder: Enter your download path:", help="Please copy your desired download path.")
+        # # output path
+        # output_path = st.text_input(label=":file_folder: Enter your download path:", help="Please copy your desired download path.")
         # scenario description using naturlistic language from user
         scenario_description = st.text_area(":bulb: Please describe your desired scenarios:", height=15,\
                                             placeholder="To be decided... ...")
@@ -202,7 +202,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
 
         # Extract button
         if extract_btn:  
-            extract = check_extract_condition(dataset_load, selected_opts, output_path, metric_threshold)
+            extract = check_extract_condition(dataset_load, selected_opts, metric_threshold)
             xosc_files = []
             if extract and csv_format:
                 oriTracksDf = st.session_state.my_data['tracks_original']
@@ -260,19 +260,19 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
 
                     # Create input for "xosc_generation" and "IPG_CarMaker_text_generation"
                     sim_time = len(egoVehTraj_common)/25
-                    output_path_xosc = output_path + '\\' + f'Chat2Scenario_xosc_{xosc_index}.xosc'
-                    output_path_text = output_path + '\\' + f'Chat2Scenario_text_{xosc_index}.txt'
+                    # output_path_xosc = output_path + '\\' + f'Chat2Scenario_xosc_{xosc_index}.xosc'
+                    # output_path_text = output_path + '\\' + f'Chat2Scenario_text_{xosc_index}.txt'
                     ego_track = egoVehTraj_common
                     tgt_tracks = tgtVehTrajs_common
                     
                     if selected_opts == "xosc":
-                        pretty_xml_string = xosc_generation(sim_time, output_path_xosc, ego_track, tgt_tracks)
+                        pretty_xml_string = xosc_generation(sim_time, ego_track, tgt_tracks)
                         xosc_files.append(pretty_xml_string)
                         
-                    if selected_opts == "txt":
-                        IPG_CarMaker_text_generation(output_path_text, ego_track, tgt_tracks)
+                    # if selected_opts == "txt":
+                    #     IPG_CarMaker_text_generation(output_path_text, ego_track, tgt_tracks)
                              
-            reminder_holder.warning("All OpenSCENARIO/text files are successfully generated...")
+            reminder_holder.warning("All files are successfully generated. Click the button below to download.")
             # Create a BytesIO buffer for the ZIP file
             zip_buffer = BytesIO()
 
