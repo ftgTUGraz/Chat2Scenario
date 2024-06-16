@@ -98,8 +98,6 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
             st.write(":x: Metric is not selected:")
         # xosc or txt
         selected_opts = st.selectbox(":bookmark_tabs: Select desired format:", ['xosc', 'txt'])
-        # # output path
-        # output_path = st.text_input(label=":file_folder: Enter your download path:", help="Please copy your desired download path.")
         # scenario description using naturlistic language from user
         scenario_description = st.text_area(":bulb: Please describe your desired scenarios:", height=15,\
                                             placeholder="To be decided... ...")
@@ -123,53 +121,54 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 reminder_holder.warning(':thinking_face: Start understand scenario using LLM...')
                 progress_bar = st.progress(0)
                 key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar)
-                print('Response of the LLM:')
-                print(key_label)
-                # Check if key_label is valid
-                check_key_label = validate_scenario(key_label, reminder_holder)
+                if key_label is None:
+                    st.warning(':cry: Your openai key is not valid or something went wrong with openai model. Please modify the key and try again.')
+                else:
+                    print('Response of the LLM:')
+                    print(key_label)
+                    # Check if key_label is valid
+                    check_key_label = validate_scenario(key_label, reminder_holder)
 
-                if check_key_label:
-
-                    tracks_original = pd.read_csv(dataset_load)    
-                    # Insert original csv in the global variable
-                    st.session_state.my_data['tracks_original'] = tracks_original
-                    # Calculate all vehicles' longitudinal and lateral activity
-                    reminder_holder.warning(':running: Start analyze the vehicle activity...')
-                    longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar)
-                
-                # if key_label != None:
-                    # Search correspondong scenarios from dictionary based on the key labels
-                    reminder_holder.warning(':mag: Start search desired scenarios...')
-                    scenarioList = mainFunctionScenarioIdentification(tracks_original, key_label, latActDict, longActDict, interactIdDict, progress_bar)
-                    print("The following scenarios are in the scenario pool:")
-                    print(scenarioList)
+                    if check_key_label:
+                        tracks_original = pd.read_csv(dataset_load)    
+                        # Insert original csv in the global variable
+                        st.session_state.my_data['tracks_original'] = tracks_original
+                        # Calculate all vehicles' longitudinal and lateral activity
+                        reminder_holder.warning(':running: Start analyze the vehicle activity...')
+                        longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar)
                     
-                    # Calculate the metric value for frames when the requirements can be met
-                    reminder_holder.warning(f"{len(scenarioList)} scenarios are found. Start calculate metric values...")
-                    indexProgress = 0
-                    for scenario_i in scenarioList:
-                        # Make progress bar based on current index
-                        progress = int((indexProgress / len(scenarioList)) * 100)
-                        progress_bar.progress(progress)
-                        # Find ego and target data
-                        curr_scenario = scenario_i 
-                        egoId = curr_scenario[0]
-                        targetIds = curr_scenario[1]
-                        initialFrame = curr_scenario[2]
-                        finalFrame = curr_scenario[3]
-                        egoVehData, tgtVehsData = find_vehicle_data_within_start_end_frame(tracks_original, egoId, targetIds, initialFrame, finalFrame)
-                        metric_value_res = calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehsData, reminder_holder, metric_option, \
-                                        metric_suboption, CA_Input, tracks_original, st.session_state.my_data['framerate'], target_value)
-                        # Compare the calculated metric value with predefined threshold
-                        isScenario = if_scenario_within_threshold(metric_value_res, metric_threshold)
-                        if isScenario:
-                            if curr_scenario not in st.session_state.my_data['desired_scenario']:
-                                st.session_state.my_data['desired_scenario'].append(curr_scenario)
+                        # Search correspondong scenarios from dictionary based on the key labels
+                        reminder_holder.warning(':mag: Start search desired scenarios...')
+                        scenarioList = mainFunctionScenarioIdentification(tracks_original, key_label, latActDict, longActDict, interactIdDict, progress_bar)
+                        print("The following scenarios are in the scenario pool:")
+                        print(scenarioList)
+                        
+                        # Calculate the metric value for frames when the requirements can be met
+                        reminder_holder.warning(f"{len(scenarioList)} scenarios are found. Start calculate metric values...")
+                        indexProgress = 0
+                        for scenario_i in scenarioList:
+                            # Make progress bar based on current index
+                            progress = int((indexProgress / len(scenarioList)) * 100)
+                            progress_bar.progress(progress)
+                            # Find ego and target data
+                            curr_scenario = scenario_i 
+                            egoId = curr_scenario[0]
+                            targetIds = curr_scenario[1]
+                            initialFrame = curr_scenario[2]
+                            finalFrame = curr_scenario[3]
+                            egoVehData, tgtVehsData = find_vehicle_data_within_start_end_frame(tracks_original, egoId, targetIds, initialFrame, finalFrame)
+                            metric_value_res = calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehsData, reminder_holder, metric_option, \
+                                            metric_suboption, CA_Input, tracks_original, st.session_state.my_data['framerate'], target_value)
+                            # Compare the calculated metric value with predefined threshold
+                            isScenario = if_scenario_within_threshold(metric_value_res, metric_threshold)
+                            if isScenario:
+                                if curr_scenario not in st.session_state.my_data['desired_scenario']:
+                                    st.session_state.my_data['desired_scenario'].append(curr_scenario)
 
-                        # Update for last item
-                        indexProgress += 1
-                        if indexProgress == len(scenarioList):
-                            progress_bar.progress(100)
+                            # Update for last item
+                            indexProgress += 1
+                            if indexProgress == len(scenarioList):
+                                progress_bar.progress(100)
 
                 # reminder_holder.write(st.session_state.my_data['desired_scenario'])
 
@@ -198,7 +197,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                     anmation_holder = st.empty()
                     preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option)
                 else:
-                    reminder_holder.warning("No scenarios are selected from the pool. Try to reset the criticality metric/value.")
+                    reminder_holder.warning(":cry: No scenarios are selected from the pool. Try to reset the criticality metric/value or check the openai key.")
 
         # Extract button
         if extract_btn:  
@@ -260,8 +259,6 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
 
                     # Create input for "xosc_generation" and "IPG_CarMaker_text_generation"
                     sim_time = len(egoVehTraj_common)/25
-                    # output_path_xosc = output_path + '\\' + f'Chat2Scenario_xosc_{xosc_index}.xosc'
-                    # output_path_text = output_path + '\\' + f'Chat2Scenario_text_{xosc_index}.txt'
                     ego_track = egoVehTraj_common
                     tgt_tracks = tgtVehTrajs_common
                     

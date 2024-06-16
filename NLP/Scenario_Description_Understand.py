@@ -6,6 +6,7 @@ Email: yongqi.zhao@tugraz.at
 """
 import openai
 import json
+import openai.error
 
 ### Define framework to classify scenarios in functional level
 classification_framework = {
@@ -44,7 +45,7 @@ def LLM_process_scenario_description(openai_key, scenario_description, classific
         classification_framework (str): pre-defined framework to classify the scenarios 
 
     Returns:
-        response of GPT
+        response of GPT [None, if error occurs]
     ----------
     """
 
@@ -92,15 +93,20 @@ def LLM_process_scenario_description(openai_key, scenario_description, classific
     # Assign openai key
     openai.api_key = openai_key
 
-    # Feed prompt to openai LLM
-    response = openai.ChatCompletion.create(
-        model="gpt-4-1106-preview",
-        messages=[
-            {"role":"user", "content":prompt}])
+    try:
+        # Feed prompt to openai LLM
+        response = openai.ChatCompletion.create(
+            model="gpt-4-1106-preview",
+            messages=[
+                {"role":"user", "content":prompt}])
+        return response["choices"][0]["message"]["content"]
+    except openai.error.AuthenticationError:
+        print("Warning: Invalid OpenAI API key.")
+        return None
+    except openai.error.OpenAIError as e:
+        print(f"An error occurred: {e}") 
+        return None
     
-    # Return response from GPT
-    return response["choices"][0]["message"]["content"]
-
 
 ### Process the GPT response
 def extract_json_from_response(response):
@@ -139,17 +145,19 @@ def get_scenario_classification_via_LLM(openai_key, scenario_description, progre
         progress_bar (st.progress(0)): progress bar in 0%
 
     Returns:
-        key labels in the format of json
+        key labels in the format of json [None, if error occures]
     ----------
     """
     # Get response from LLM
     progress_bar.progress(25)
     response = LLM_process_scenario_description(openai_key, scenario_description, classification_framework)
     progress_bar.progress(100)
-    # Extract key labels
-    key_label = extract_json_from_response(response)
-
-    return key_label
+    if response is not None:
+        # Extract key labels
+        key_label = extract_json_from_response(response)
+        return key_label
+    else:
+        return None
 
 
 def validate_scenario(sample, reminder_holder):
