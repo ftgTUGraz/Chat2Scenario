@@ -15,6 +15,9 @@ from Metric.Distance_Scale import *
 from Metric.Jerk_Scale import *
 from Metric.Time_Scale import *
 from scipy import stats
+from xml.dom import minidom
+from io import BytesIO
+import xml.etree.ElementTree as ET
 
 def create_act():
 
@@ -235,8 +238,15 @@ def xosc_generation(sim_time, output_path, ego_track, target_tracks_sampled):
         roadnetwork=road,
         catalog=catalog
     )
-    print(output_path)
-    sce.write_xml(output_path)
+    
+    # convert scenario to xml
+    root_element = sce.get_element()
+    xml_string = ET.tostring(root_element, encoding='unicode', method='xml')
+    # prettify the xml string
+    dom = minidom.parseString(xml_string)
+    pretty_xml_string = dom.toprettyxml()
+    # sce.write_xml(output_path)
+    return pretty_xml_string
 
 
 def create_time_pos_list(object_track, offset_frame):
@@ -849,36 +859,6 @@ def search_scenario(tracks, metric_threshold, dataset_option, search_index, metr
 
     # 5. Align the time of ego and target
     fictive_ego_list, fictive_target_dict = align_ego_and_target(selected_ego, selected_target, dataset_option)
-
-    # # When metric is not custom self-defined, noise reduction needed
-    # if metric_name == "":
-    #     # 6. Noise reduction (resampling-->find a better solution)
-    #     # get framerate
-    #     if dataset_option == "AD4CHE":
-    #         frame_rate = 30
-    #     else:
-    #         frame_rate = 25
-
-    #     # ego
-    #     target_sample_rate = 1
-    #     fictive_ego_list_sampled = []
-    #     for fictive_ego in fictive_ego_list:
-    #         ego_track = noise_reduction(fictive_ego, target_sample_rate, frame_rate)
-    #         fictive_ego_list_sampled.append(ego_track)
-
-    #     # target
-    #     fictive_target_dicts_sampled = {}
-    #     for ego_id, target_list in fictive_target_dict.items():
-    #         target_tracks_list = []
-    #         for target in target_list:
-    #             target_track = noise_reduction(target, target_sample_rate, frame_rate)
-    #             target_tracks_list.append(target_track)
-    #         fictive_target_dicts_sampled[ego_id] = target_tracks_list
-        
-    #     return fictive_ego_list_sampled, fictive_target_dicts_sampled
-    # # When metric is defined by user, no more noise reduction is needed. (It has been done in prompt)
-    # elif metric_name != "":
-    #     return fictive_ego_list, fictive_target_dict
     
     return fictive_ego_list, fictive_target_dict
 
@@ -939,22 +919,6 @@ def if_scenario_within_threshold(metric_value_res, metric_threshold):
         max_threshold = metric_threshold[1]
 
         return ((metric_values >= min_threshold) & (metric_values <= max_threshold)).any()
-
-        # # Check if the rods are within the range
-        # within_range = metric_values[(metric_values >= min_threshold) & (metric_values <= max_threshold)]
-
-        # percentage_within_range = len(within_range) / len(metric_values) * 100
-
-        # # Desired coverage and confidence level
-        # desired_coverage = 90  # 95%
-
-        # # Check if the actual percentage meets the desired coverage with the specified confidence level
-        # if percentage_within_range >= desired_coverage:
-        #     print(f"{percentage_within_range:.2f}% of calculated metric values are within the specified range, which meets the requirement.")
-        #     return True
-        # else:
-        #     print(f"{percentage_within_range:.2f}% of calculated metric values are within the specified range, which does NOT meet the requirement.")
-        #     return False
 
     # If the metric_value_res in the format of "float"
     else:
