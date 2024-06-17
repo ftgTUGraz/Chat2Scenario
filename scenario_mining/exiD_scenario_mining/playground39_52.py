@@ -69,15 +69,15 @@ def extract_polygon_from_kml(kml_file, placemark_names, x_utm_origin, y_utm_orig
 def determine_turn_type_and_lane(point, onramp_polygons, offramp_polygons, lanes_polygons):
     for ramp_name, (onramp_polygon, lane_id) in onramp_polygons.items():
         if onramp_polygon and onramp_polygon.contains(point):
-            return f'OnRamp', lane_id
+            return f'on-ramp', lane_id
 
     for ramp_name, (offramp_polygon, lane_id) in offramp_polygons.items():
         if offramp_polygon and offramp_polygon.contains(point):
-            return f'OffRamp', lane_id
+            return f'off-ramp', lane_id
     
     for lane_id, polygon in lanes_polygons:
         if polygon and polygon.contains(point):
-            return 'KeepRamp', lane_id
+            return '', lane_id
     
     return 'Unknown', None
 
@@ -95,20 +95,48 @@ def update_track_data(input_file, output_file, onramp_polygons, offramp_polygons
             row['laneId'] = lane_id
             row['activity_type'] = turn_type
             tracks[row['trackId']].append(row)
-
+    '''
     for track_id, rows in tracks.items():
         activities = set(row['activity_type'] for row in rows)
-        if any('OnRamp' in activity for activity in activities) and any('OffRamp' in activity for activity in activities):
-            final_activity = 'OnRamp|OffRamp'
-        elif any('OnRamp' in activity for activity in activities):
-            final_activity = next(activity for activity in activities if 'OnRamp' in activity)
-        elif any('OffRamp' in activity for activity in activities):
-            final_activity = next(activity for activity in activities if 'OffRamp' in activity)
+        if any('on-ramp' in activity for activity in activities) and any('off-ramp' in activity for activity in activities):
+            final_activity = 'on-ramp|off-ramp'
+        elif any('on-ramp' in activity for activity in activities):
+            final_activity = next(activity for activity in activities if 'on-ramp' in activity)
+        elif any('off-ramp' in activity for activity in activities):
+            final_activity = next(activity for activity in activities if 'off-ramp' in activity)
         else:
             final_activity = 'KeepRamp'
         
         for row in rows:
             row['activity_type'] = final_activity
+    
+# 处理每个trackId，确保'on-ramp'和'off-ramp'只出现一次，并在连续的'on-ramp'的最后一帧的下一帧加'follow lane'
+    for track_id, rows in tracks.items():
+        on_ramp_seen = False
+        off_ramp_seen = False
+        last_on_ramp_index = None
+
+        for i, row in enumerate(rows):
+            if row['activity_type'] == 'on-ramp':
+                if not on_ramp_seen:
+                    on_ramp_seen = True
+                    last_on_ramp_index = i
+                else:
+                    row['activity_type'] = ''
+                    last_on_ramp_index = i
+            elif row['activity_type'] == 'off-ramp':
+                if off_ramp_seen:
+                    row['activity_type'] = ''
+                else:
+                    off_ramp_seen = True
+                if on_ramp_seen and last_on_ramp_index is not None and last_on_ramp_index + 1 < len(rows):
+                    rows[last_on_ramp_index + 1]['activity_type'] = 'follow lane'
+                last_on_ramp_index = None
+
+        # 在最后一个'on-ramp'的下一帧添加'follow lane'，如果没有遇到'off-ramp'
+        if on_ramp_seen and last_on_ramp_index is not None and last_on_ramp_index + 1 < len(rows):
+            rows[last_on_ramp_index + 1]['activity_type'] = 'follow lane'
+        '''
 
     with open(output_file, 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)

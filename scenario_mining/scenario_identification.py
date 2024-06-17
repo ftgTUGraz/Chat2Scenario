@@ -29,7 +29,7 @@ def intersection_judge(list1, list2):
         return []
 
 
-def pos_calc(laneDiff, ego_drive_direction, delta_x_tgt_ego):
+def pos_calc(laneDiff, ego_drive_direction, delta_x_tgt_ego, req_tgt_type):
     """
     Target vehicle position w.r.t. ego vehicle calculation
 
@@ -44,6 +44,7 @@ def pos_calc(laneDiff, ego_drive_direction, delta_x_tgt_ego):
         lane position (str): target vehicle position w.r.t. the ego vehicle 
     ----------
     """
+    '''
     # same lane
     if abs(laneDiff) == 0:
         # driving direction "along" x-axis
@@ -86,8 +87,83 @@ def pos_calc(laneDiff, ego_drive_direction, delta_x_tgt_ego):
                 return 'lane next to left adjacent lane'
             elif laneDiff == -2:
                 return 'lane next to right adjacent lane'
+    '''
+    def same_lane_position(delta_x):
+        if delta_x > 0:
+            return 'front'
+        elif delta_x < 0:
+            return 'behind'
+    def same_lane_position_2(delta_x):
+        if delta_x > 0:
+            return 'lead'
+        elif delta_x < 0:
+            return 'rear'
+    # Handle different target types
+    if req_tgt_type == 'same lane':
+        if abs(laneDiff) == 0:
+            if ego_drive_direction > 0:
+                return same_lane_position(delta_x_tgt_ego)
+            else:
+                return same_lane_position(-delta_x_tgt_ego)
+    
+    elif req_tgt_type == 'adjacent lane':
+        if abs(laneDiff) == 1:
+            if ego_drive_direction > 0:
+                if laneDiff == 1:
+                    return 'right adjacent lane'
+                elif laneDiff == -1:
+                    return 'left adjacent lane'
+            else:
+                if laneDiff == 1:
+                    return 'left adjacent lane'
+                elif laneDiff == -1:
+                    return 'right adjacent lane'
+    
+    elif req_tgt_type == 'lane next to adjacent lane':
+        if abs(laneDiff) == 2:
+            if ego_drive_direction > 0:
+                if laneDiff == 2:
+                    return 'lane next to right adjacent lane'
+                elif laneDiff == -2:
+                    return 'lane next to left adjacent lane'
+            else:
+                if laneDiff == 2:
+                    return 'lane next to left adjacent lane'
+                elif laneDiff == -2:
+                    return 'lane next to right adjacent lane'
+    
+    elif req_tgt_type == 'lead':
+        if ego_drive_direction > 0:
+            if laneDiff == 0:
+                return same_lane_position_2(delta_x_tgt_ego)
+            elif laneDiff == 1 and delta_x_tgt_ego > 0:
+                return 'right lead'
+            elif laneDiff == -1 and delta_x_tgt_ego > 0:
+                return 'left lead'
+        else:
+            if laneDiff == 0:
+                return same_lane_position_2(-delta_x_tgt_ego)
+            elif laneDiff == 1 and delta_x_tgt_ego < 0:
+                return 'left lead'
+            elif laneDiff == -1 and delta_x_tgt_ego < 0:
+                return 'right lead'
 
-
+    elif req_tgt_type == 'rear':
+        if ego_drive_direction > 0:
+            if laneDiff == 0:
+                return same_lane_position_2(delta_x_tgt_ego)
+            elif laneDiff == 1 and delta_x_tgt_ego < 0:
+                return 'right rear'
+            elif laneDiff == -1 and delta_x_tgt_ego < 0:
+                return 'left rear'
+        else:
+            if laneDiff == 0:
+                return same_lane_position_2(-delta_x_tgt_ego)
+            elif laneDiff == 1 and delta_x_tgt_ego > 0:
+                return 'left rear'
+            elif laneDiff == -1 and delta_x_tgt_ego > 0:
+                return 'right rear'
+            
 def find_start_end_frame_of_latAct(curr_latActs, req_latAct):
     """
     Find the start and the end frame from current lateral activity based on the required activity
@@ -172,16 +248,18 @@ def get_activity_from_LLM_response(LLM_response):
     tgt_startPos = LLM_response['Target Vehicle #1']['Target start position']
     start_item = list(tgt_startPos.items())[0]
     req_tgt_startPos = start_item[1][0]
+    req_tgt_startPos_type = start_item[0]
     # Target end position
     tgt_endPos = LLM_response['Target Vehicle #1']['Target end position']
     end_item = list(tgt_endPos.items())[0]
     req_tgt_endPos = end_item[1][0]
+    req_tgt_endPos_type = end_item[0]
 
     # Target lateral and longitudinal activity
     req_tgt_latAct = LLM_response['Target Vehicle #1']['Target behavior']['target lateral activity'][0]
     req_tgt_longAct = LLM_response['Target Vehicle #1']['Target behavior']['target longitudinal activity'][0]
 
-    return req_ego_latAct, req_ego_lonAct, req_tgt_startPos, req_tgt_endPos, req_tgt_latAct, req_tgt_longAct
+    return req_ego_latAct, req_ego_lonAct, req_tgt_startPos, req_tgt_endPos, req_tgt_latAct, req_tgt_longAct, req_tgt_startPos_type, req_tgt_endPos_type
 
 
 def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longActDict, interactIdDict, progress_bar):
@@ -204,7 +282,7 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
     """
 
     req_ego_latAct, req_ego_lonAct, req_tgt_startPos, req_tgt_endPos, \
-    req_tgt_latAct, req_tgt_longAct = get_activity_from_LLM_response(key_label)
+    req_tgt_latAct, req_tgt_longAct , req_tgt_startPos_type, req_tgt_endPos_type = get_activity_from_LLM_response(key_label)
 
     scenarioLists = []
     ## Search from vehicle activity file: the following conditions should be judged:
@@ -257,7 +335,7 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
             ego_drive_direction = curr_ego_end_row['x'][0] - curr_ego_start_row['x'][0]
             delta_x_tgt_ego_start = curr_tgt_start_row['x'][0] - curr_ego_start_row['x'][0]
             laneDiffStart = curr_tgt_start_lane - curr_ego_start_lane
-            curr_tgt_pos_start = pos_calc(laneDiffStart, ego_drive_direction, delta_x_tgt_ego_start)
+            curr_tgt_pos_start = pos_calc(laneDiffStart, ego_drive_direction, delta_x_tgt_ego_start, req_tgt_startPos_type)
 
             # If current target vehicle was not once the precedingId of the current ego vehicle, then skip
             if curr_interact_tgt not in curr_ego_life['precedingId'].values:
@@ -267,7 +345,7 @@ def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longAct
                 # Calculate the target vehicle position at end
                 delta_x_tgt_ego_end = curr_tgt_end_row['x'][0] - curr_ego_end_row['x'][0]
                 laneDiffEnd = curr_tgt_end_lane - curr_ego_end_lane
-                curr_tgt_pos_end = pos_calc(laneDiffEnd, ego_drive_direction, delta_x_tgt_ego_end)
+                curr_tgt_pos_end = pos_calc(laneDiffEnd, ego_drive_direction, delta_x_tgt_ego_end, req_tgt_endPos_type)
                 if curr_tgt_pos_end == req_tgt_endPos: # Judge the end position
                     # If longitudinal activity is omitted, get current targetID and BegFrame, EndFrame
                     if req_ego_lonAct ==  'NA' and req_tgt_longAct == 'NA':

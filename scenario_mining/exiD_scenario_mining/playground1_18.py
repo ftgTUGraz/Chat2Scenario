@@ -123,30 +123,19 @@ def determine_turn_type_and_lane(point, onramp_polygon, offramp_polygon, lanes_p
     tuple: (转弯类型, 车道ID)
     """
     if onramp_polygon and onramp_polygon.contains(point):
-        return 'OnRamp', -5  # Assuming OnRamp corresponds to lane -5
+        return 'on-ramp', -5  # Assuming OnRamp corresponds to lane -5
     if offramp_polygon and offramp_polygon.contains(point):
-        return 'OffRamp', 4  # Assuming OffRamp corresponds to lane -5
+        return 'off-ramp', 4  # Assuming OffRamp corresponds to lane -5
     
     for lane_id, polygon in lanes_polygons:
         if polygon and polygon.contains(point):
-            return 'KeepRamp', lane_id
+            return '', lane_id
     
     return 'Unknown', None
 
-def update_track_data(input_file, output_file, onramp_polygon, offramp_polygon, lanes_polygons):
-    """
-    更新轨迹数据中的转弯类型和车道ID。
-    
-    参数:
-    input_file (str): 输入轨迹数据文件路径
-    output_file (str): 输出更新的轨迹数据文件路径
-    onramp_polygon (Polygon): OnRamp多边形
-    offramp_polygon (Polygon): OffRamp多边形
-    lanes_polygons (list): (lane_id, Polygon)元组列表
-    """
+def update_track_data(input_file, output_file, onramp_polygons, offramp_polygons, lanes_polygons):
     tracks = defaultdict(list)
 
-    # 首先读取输入文件并确定每个trackId的转弯类型
     with open(input_file, 'r') as infile:
         reader = csv.DictReader(infile)
         fieldnames = reader.fieldnames + ['laneId', 'activity_type']
@@ -154,29 +143,53 @@ def update_track_data(input_file, output_file, onramp_polygon, offramp_polygon, 
             x_center = float(row['xCenter'])
             y_center = float(row['yCenter'])
             point = Point(x_center, y_center)
-            turn_type, lane_id = determine_turn_type_and_lane(point, onramp_polygon, offramp_polygon, lanes_polygons)
+            turn_type, lane_id = determine_turn_type_and_lane(point, onramp_polygons, offramp_polygons, lanes_polygons)
             row['laneId'] = lane_id
             row['activity_type'] = turn_type
             tracks[row['trackId']].append(row)
-
-    #更新每个trackId的所有点的活动类型
+    '''
     for track_id, rows in tracks.items():
-        # 检查是否有任何点是OnRamp或OffRamp
         activities = set(row['activity_type'] for row in rows)
-        if 'OnRamp' in activities and 'OffRamp' in activities:
-            final_activity = 'OnRamp|OffRamp'
-        elif 'OnRamp' in activities:
-            final_activity = 'OnRamp'
-        elif 'OffRamp' in activities:
-            final_activity = 'OffRamp'
+        if any('on-ramp' in activity for activity in activities) and any('off-ramp' in activity for activity in activities):
+            final_activity = 'on-ramp|off-ramp'
+        elif any('on-ramp' in activity for activity in activities):
+            final_activity = next(activity for activity in activities if 'on-ramp' in activity)
+        elif any('off-ramp' in activity for activity in activities):
+            final_activity = next(activity for activity in activities if 'off-ramp' in activity)
         else:
             final_activity = 'KeepRamp'
         
-        # 更新所有点的活动类型
         for row in rows:
             row['activity_type'] = final_activity
+    '''
+# 处理每个trackId，确保'on-ramp'和'off-ramp'只出现一次，并在连续的'on-ramp'的最后一帧的下一帧加'follow lane'
+    for track_id, rows in tracks.items():
+        on_ramp_seen = False
+        off_ramp_seen = False
+        last_on_ramp_index = None
 
-    # 将更新后的数据写入输出文件
+        for i, row in enumerate(rows):
+            if row['activity_type'] == 'on-ramp':
+                if not on_ramp_seen:
+                    on_ramp_seen = True
+                    last_on_ramp_index = i
+                else:
+                    row['activity_type'] = ''
+                    last_on_ramp_index = i
+            elif row['activity_type'] == 'off-ramp':
+                if off_ramp_seen:
+                    row['activity_type'] = ''
+                else:
+                    off_ramp_seen = True
+                if on_ramp_seen and last_on_ramp_index is not None and last_on_ramp_index + 1 < len(rows):
+                    rows[last_on_ramp_index + 1]['activity_type'] = 'follow lane'
+                last_on_ramp_index = None
+
+        # 在最后一个'on-ramp'的下一帧添加'follow lane'，如果没有遇到'off-ramp'
+        if on_ramp_seen and last_on_ramp_index is not None and last_on_ramp_index + 1 < len(rows):
+            rows[last_on_ramp_index + 1]['activity_type'] = 'follow lane'
+
+
     with open(output_file, 'w', newline='') as outfile:
         writer = csv.DictWriter(outfile, fieldnames=fieldnames)
         writer.writeheader()
