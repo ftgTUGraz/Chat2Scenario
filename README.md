@@ -22,6 +22,13 @@ Chat2Scenario is a web-based tool that allows users to search for specific drivi
 }
 ```
 
+## Usage
+### Without installation
+- You can directly access the web app via the following link: [https://chat2scenario.streamlit.app/](https://chat2scenario.streamlit.app/)
+
+### With installation
+- Follow the installation and operation instructions to download the source code and use it locally.
+
 ## Installation
 ### Pre-requirements
 - Python installation
@@ -44,7 +51,7 @@ conda env create -f environment.yml
 conda activate chat2scenario
 ```
 
-## Usage
+## Operation
 - Open the Project
 	- Open the entire project using a code editor e.g., Visual Studio Code
 	- Run the project in the terminal with the following command
