@@ -162,7 +162,7 @@ def get_scenario_classification_via_LLM(openai_key, scenario_description, progre
 
 def validate_scenario(sample, reminder_holder):
     """
-    validate the key label extracted from LLM response
+    Validate the key label extracted from LLM response.
 
     Parameters:
     ----------
@@ -171,10 +171,10 @@ def validate_scenario(sample, reminder_holder):
         reminder_holder: st.empty()
 
     Returns:
-        true/false (bool): True --> key_label is valid; False: key_label is NOT valid
+        bool: True if key_label is valid, False otherwise
     ----------
     """
-
+    # Standard model
     model = {
         'Ego Vehicle': {
             'longitudinal activity': ['keep velocity', 'acceleration', 'deceleration'],
@@ -195,48 +195,134 @@ def validate_scenario(sample, reminder_holder):
 
     # Helper function to check activities
     def check_activities(activities, model_activities):
+        if not isinstance(activities, list):
+            return False
         return all(activity in model_activities for activity in activities)
 
+    # ------------------------------- Check the ego vehicke --------------------------------
     # Check Ego Vehicle activities
-    ego_activities = sample.get('Ego Vehicle', {})
-    egoLonActCheck = check_activities(ego_activities.get('Ego longitudinal activity', []), 
-                            model['Ego Vehicle']['longitudinal activity'])
-    egoLatActCheck = check_activities(ego_activities.get('Ego lateral activity', []), 
-                            model['Ego Vehicle']['lateral activity'])
+    try: 
+        ego_activities = sample.get('Ego Vehicle', {})
+        if not ego_activities:
+            reminder_holder.warning(":cry: Invalid Ego Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+            return False
+    except AttributeError:
+        reminder_holder.warning(":cry: Invalid Ego Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        return False
     
-    if not egoLonActCheck or not egoLatActCheck:
-        reminder_holder.warning("Invalid activities for Ego Vehicle")
+    # Check Ego longitudinal activities
+    try:
+        ego_lon_act = ego_activities.get('Ego longitudinal activity', [])
+        if not ego_lon_act:
+            reminder_holder.warning(":cry: Invalid Ego longitudinal activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+            return False
+    except AttributeError:
+        reminder_holder.warning(":cry: Invalid Ego longitudinal activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
         return False
 
-    # Check Target Vehicle activities and positions
-    for target_vehicle, details in sample.items():
-        if "Target Vehicle" in target_vehicle:
-            # Check Target behavior
-            target_behavior = details.get('Target behavior', {})
-            tgtLonActCheck = check_activities(target_behavior.get('target longitudinal activity', []), 
-                                    model['Target Vehicle']['behavior']['longitudinal activity'])
-            tgtLatActCheck = check_activities(target_behavior.get('target lateral activity', []), 
-                                    model['Target Vehicle']['behavior']['lateral activity'])
+    # Check Ego lateral activities
+    try: 
+        ego_lat_act = ego_activities.get('Ego lateral activity', [])
+        if not ego_lat_act:
+            reminder_holder.warning(":cry: Invalid Ego lateral activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+            return False
+    except AttributeError:
+        reminder_holder.warning(":cry: Invalid Ego lateral activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        return False
 
-            if not tgtLonActCheck or not tgtLatActCheck:
-                reminder_holder.warning("Invalid target behavior for Target Vehicle")
+    if not (isinstance(ego_lon_act, list) and isinstance(ego_lat_act, list)):
+        reminder_holder.warning(":cry: Invalid Ego Vehicle activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        return False
+
+    # Check latereal and longitudinal activity for ego
+    egoLonActCheck = check_activities(ego_lon_act, model['Ego Vehicle']['longitudinal activity'])
+    egoLatActCheck = check_activities(ego_lat_act, model['Ego Vehicle']['lateral activity'])
+    if not egoLonActCheck:
+        reminder_holder.warning(":cry: Invalid longitudinal activities for Ego Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        return False
+    if not egoLatActCheck:
+        reminder_holder.warning(":cry: Invalid lateral activities for Ego Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        return False
+
+
+    # --------------------------Check the target vehicle------------------------------
+    # Check Target Vehicle activities and positions
+    tgt_idx = 1
+    # for target_vehicle, details in sample.items():
+    for index, (target_vehicle, details) in enumerate(sample.items()):
+        if index == 0:
+            continue  
+        curr_tgt_veh = "Target Vehicle #" + str(tgt_idx)
+        if curr_tgt_veh in target_vehicle:
+            # Check Target behavior
+            try:
+                target_behavior = details.get('Target behavior', {})
+                if not target_behavior:
+                    reminder_holder.warning(":cry: Invalid Target behavior. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+                    return False
+            except AttributeError:
+                reminder_holder.warning(":cry: Invalid Target behavior. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
                 return False
             
+            # Check target lon act
+            try:
+                tgt_lon_act = target_behavior.get('target longitudinal activity', [])
+                if not tgt_lon_act:
+                    reminder_holder.warning(":cry: Invalid Target longitudinal activity. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+                    return False
+            except AttributeError:
+                reminder_holder.warning(":cry: Invalid Target longitudinal activity. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+                return False
+
+            # Check the target lat act
+            try:              
+                tgt_lat_act = target_behavior.get('target lateral activity', [])
+                if not tgt_lat_act:
+                    reminder_holder.warning(":cry: Invalid Target lateral activity. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+                    return False
+            except AttributeError:
+                reminder_holder.warning(":cry: Invalid Target lateral activity. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+                return False
+
+            if not (isinstance(tgt_lon_act, list) and isinstance(tgt_lat_act, list)):
+                reminder_holder.warning(f"Target Vehicle activities should be lists for {target_vehicle}.")
+                return False
+
+            tgtLonActCheck = check_activities(tgt_lon_act, model['Target Vehicle']['behavior']['longitudinal activity'])
+            tgtLatActCheck = check_activities(tgt_lat_act, model['Target Vehicle']['behavior']['lateral activity'])
+
+            if not tgtLonActCheck:
+                reminder_holder.warning(f"Invalid longitudinal activities for {target_vehicle}")
+                return False
+
+            if not tgtLatActCheck:
+                reminder_holder.warning(f"Invalid lateral activities for {target_vehicle}")
+                return False
+
             # Check Target start and end positions
             for position_key in ['Target start position', 'Target end position']:
                 position = details.get(position_key, {})
+                if not isinstance(position, dict) or not position:
+                    reminder_holder.warning(f"Invalid {position_key} for {target_vehicle}. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+                    # print(f"{position_key} should be a dictionary for {target_vehicle}.")
+                    return False
+
                 for pos_type, pos_value in position.items():
                     if pos_type in model['Target Vehicle']['position']:
                         if not check_activities(pos_value, model['Target Vehicle']['position'][pos_type]):
-                            reminder_holder.warning(f"Invalid {position_key} in {pos_type} for {target_vehicle}")
+                            reminder_holder.warning(f"Invalid {position_key} in {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
                             return False
                     else:
-                        reminder_holder.warning(f"Invalid position type: {pos_type} for {target_vehicle}")
+                        reminder_holder.warning(f"Invalid position type: {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
                         return False
-    
-    reminder_holder.warning("Validation successful.")
+        else:
+            reminder_holder.warning(":cry: Invalid Target Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+            return False
+        
+        tgt_idx += 1
+
+    if index == 0:
+        reminder_holder.warning(":cry: Invalid Target Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        return False
+
     return True
-
-
-
-

@@ -121,11 +121,15 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 reminder_holder.warning(':thinking_face: Start understand scenario using LLM...')
                 progress_bar = st.progress(0)
                 key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar)
+                print(key_label)
                 if key_label is None:
-                    st.warning(':cry: Your openai key is not valid or something went wrong with openai model. Please modify the key and try again.')
+                    warning_messages = """
+                    :cry: Something went wrong with the LLM understanding scenarios. Please check the following to fix it:
+                    - **1:** Verify the validity of your OpenAI key. When your credit balance reaches $0, your API requests will stop working. For more details, visist [this link](https://platform.openai.com/settings/organization/billing/overview).
+                    - **2:** Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.
+                    """
+                    st.warning(warning_messages)
                 else:
-                    print('Response of the LLM:')
-                    print(key_label)
                     # Check if key_label is valid
                     check_key_label = validate_scenario(key_label, reminder_holder)
 
@@ -196,8 +200,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                         fictive_tgt_dict[egoId] = tgtVehsData
                     anmation_holder = st.empty()
                     preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option)
-                else:
-                    reminder_holder.warning(":cry: No scenarios are selected from the pool. Try to reset the criticality metric/value or check the openai key.")
+                # else:
+                #     reminder_holder.warning(":cry: No scenarios are selected from the pool. Try to reset the criticality metric/value or check the openai key.")
 
         # Extract button
         if extract_btn:  
