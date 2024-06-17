@@ -119,7 +119,50 @@ def LLM_process_scenario_description(openai_key, scenario_description, classific
             "    }\n"\
             "}\n\n"\
             "Remember to analyze carefully and provide the classification as per the structure given above."
-
+        
+    elif dataset_option == "exitD":
+        # Prompt design for exitD dataset
+        prompt = f"System, you are an AI trained to understand and classify highway driving scenarios, including entrance and exit ramps, based on specific frameworks. Your task is to analyze the following driving scenario and classify the behavior of both the ego vehicle and the target vehicle according to the given classification framework. Please follow the framework strictly and provide precise and clear classifications. The framework is as follows:\n\n{json.dumps(classification_framework, indent=4)}\n\n"\
+        "Scenario Description: \n"\
+        f"'{scenario_description}'\n\n"\
+        "Provide a detailed classification for both the ego vehicle and the target vehicle(s). The response should be formatted exactly as shown in this structure:\n"\
+        "{\n"\
+        "    'Ego Vehicle': \n"\
+        "    {\n"\
+        "        'Ego longitudinal activity': ['Your Classification'],\n"\
+        "        'Ego lateral activity': ['Your Classification'],\n"\
+        "        'Ego ramp activity': ['Your Classification']\n"\
+        "    },\n"\
+        "    'Target Vehicle #1': \n"\
+        "    {\n"\
+        "        'Target start position': {'Your Classification': ['Your Classification']},\n"\
+        "        'Target end position': {'Your Classification': ['Your Classification']},\n"\
+        "        'Target behavior': {'target longitudinal activity': ['Your Classification'], 'target lateral activity': ['Your Classification'], 'target ramp activity': ['Your Classification']}\n"\
+        "    }\n"\
+        "    'Target Vehicle #2': \n"\
+        "    {\n"\
+        "        'Target start position': {'Your Classification': ['Your Classification']},\n"\
+        "        'Target end position': {'Your Classification': ['Your Classification']},\n"\
+        "        'Target behavior': {'target longitudinal activity': ['Your Classification'], 'target lateral activity': ['Your Classification'], 'target ramp activity': ['Your Classification']}\n"\
+        "    }\n"\
+        "}\n"\
+        "Example:\n"\
+        "If an ego vehicle is maintaining speed and following its lane on a highway, then taking the OffRamp, while another vehicle is initially in the left adjacent lane and is accelerating, then changing lanes to the right; finally driving in front of the ego vehicle and also taking the OffRamp, the classification would be:\n"\
+        "{\n"\
+        "    'Ego Vehicle': \n"\
+        "    {\n"\
+        "        'Ego longitudinal activity': ['keep velocity'],\n"\
+        "        'Ego lateral activity': ['follow lane'],\n"\
+        "        'Ego ramp activity': ['OffRamp']\n"\
+        "    },\n"\
+        "    'Target Vehicle': \n"\
+        "    {\n"\
+        "        'Target start position': {'adjacent lane': ['left adjacent lane']},\n"\
+        "        'Target end position': {'same lane': ['front']},\n"\
+        "        'Target behavior': {'target longitudinal activity': ['acceleration'], 'target lateral activity': ['lane change right'], 'target ramp activity': ['OffRamp']}\n"\
+        "    }\n"\
+        "}\n\n"\
+        "Remember to analyze carefully and provide the classification as per the structure given above."
 
 
     # Assign openai key
