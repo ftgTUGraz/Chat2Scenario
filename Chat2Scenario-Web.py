@@ -102,6 +102,11 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
         scenario_description = st.text_area(":bulb: Please describe your desired scenarios:", height=15,\
                                             placeholder="To be decided... ...")
         
+        # maps widget        
+        clustrmaps_code = """
+        <script type='text/javascript' id='clustrmaps' src='//cdn.clustrmaps.com/map_v2.js?cl=ffffff&w=300&t=tt&d=2OAhc8AUN6fRW11jkXBGW2lVsNrS8hLHe-hgW7QoclI&co=aaaaaa&cmo=cb6e6e&cmn=299852'></script>
+        """
+        st.components.v1.html(clustrmaps_code, height=300)
 
     # The second column
     with col2:
