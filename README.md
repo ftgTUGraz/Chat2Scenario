@@ -2,7 +2,7 @@
 
 ## 🚨 Important News 🚨
 
-**June 24, 2024**: The web app "chat2scenario" is accessiable via [https://chat2scenario.streamlit.app/](https://chat2scenario.streamlit.app/)
+**June 17, 2024**: The web app "chat2scenario" is accessiable via [https://chat2scenario.streamlit.app/](https://chat2scenario.streamlit.app/)
 
 ## Description
 
