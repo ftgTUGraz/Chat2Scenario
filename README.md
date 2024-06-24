@@ -1,5 +1,9 @@
 # Chat2Scenario: Scenario Extraction From Dataset Through Utilization of Large Language Model
 
+## 🚨 Important News 🚨
+
+**June 24, 2024**: The web app "chat2scenario" is accessiable via [https://chat2scenario.streamlit.app/](https://chat2scenario.streamlit.app/)
+
 ## Description
 
 Chat2Scenario is a web-based tool that allows users to search for specific driving scenarios within a dataset by inputting descriptive functional scenario text. Results are presented in [ASAM OpenSCENARIO](https://www.asam.net/standards/detail/openscenario/) and [IPG CarMaker .txt](https://ipg-automotive.com/en/support/support-request/faq/usage-of-user-inputs-from-a-file-in-a-maneuver-133/) format. 
