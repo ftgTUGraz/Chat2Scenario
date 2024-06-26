@@ -9,6 +9,8 @@ import time
 from utils.helper_original_scenario import *
 import sympy as sp
 import math
+import matplotlib
+matplotlib.use('Agg') # Use a non-GUI backend
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import sys
@@ -584,7 +586,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
 
 
     if dataset_option == "inD":
-        match = re.search(r'\d+', file_path)
+        match = re.search(r'\d+', file_path.name)
         if match:
             index = int(match.group(0))
             if 0 <= index <= 6:
@@ -608,7 +610,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
             reminder_holder.warning("No valid index found, or out of range. No operation performed.")
             return 
 
-    tracks_df = pd.read_csv(file_path)
+    #tracks_df = pd.read_csv(file_path)
 
     def animate(i):
         """

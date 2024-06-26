@@ -184,7 +184,10 @@ def find_start_end_frame_of_latAct(curr_latActs, req_latAct):
     for index, row in curr_latActs.iterrows(): 
         if row['LateralActivity'] == req_latAct:
             begFrame = row['frame']
-            endFrame = curr_latActs.iloc[index+1]['frame']
+            if req_latAct == 'on-ramp':
+                endFrame = curr_latActs.iloc[index+2]['frame']  
+            else:          
+                endFrame = curr_latActs.iloc[index+1]['frame']
             latActFram.append(begFrame)
             latActFram.append(endFrame)
             break # Note in one scenario there could be multiple lateral activities, only consider the first 

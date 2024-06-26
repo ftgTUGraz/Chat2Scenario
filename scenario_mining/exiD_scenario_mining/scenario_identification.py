@@ -35,7 +35,7 @@ from matplotlib.path import Path
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('TkAgg')  # Or 'Qt5Agg', 'GTK3Agg', 'WXAgg', etc., depending on your system configuration
+matplotlib.use('TkAgg')  # 或 'Qt5Agg', 'GTK3Agg', 'WXAgg' 等，取决于你的系统配置
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon
 import shapely.wkt
@@ -44,6 +44,17 @@ import json
 from shapely.geometry import mapping
 import json
 from shapely.geometry import shape, Polygon
+
+def plot_polygons_from_json(json_data, ax):
+    for item in json_data:
+        index, polygon_dict = item
+        polygon = shape(polygon_dict)
+        coords = list(polygon.exterior.coords)
+        path_vertices = coords + [coords[0]]
+        codes = [Path.MOVETO] + [Path.LINETO] * (len(coords) - 1) + [Path.CLOSEPOLY]
+        path = Path(path_vertices, codes)
+        patch = PathPatch(path, facecolor='none', edgecolor='black', alpha=0.5, label=f'Polygon {index}')
+        ax.add_patch(patch)
 
 def get_utm_origin(recordings_meta_file):
     """
@@ -75,99 +86,21 @@ def select_playground(file_path):
     ----------
     None
     """
+    # Initialize the plot
+    fig, ax = plt.subplots()
     # 从文件名中提取数字
     match = re.search(r'\d+', file_path)
     if match:
         index = int(match.group(0))
         # 根据不同的数字范围选择对应的playground模块
         if 0 <= index <= 18:
-            # 获取playground1-18的xUtmOrigin和yUtmOrigin
-            '''
-            if 0 <= index <= 9:
-                recordings_meta_file_1_18 = f'./0{index}_recordingMeta.csv'
-            else:  
-                recordings_meta_file_1_18 = f'./{index}_recordingMeta.csv'  
-            '''
-            #x_utm_origin_1_18, y_utm_origin_1_18 = get_utm_origin(recordings_meta_file_1_18)
-            #x_utm_origin_1_18, y_utm_origin_1_18 = 352146.6000,5651141.9000
-
-            # 提取playground1-18 KML文件中的多边形
-            '''
-            onramp_polygon_1_18 = playground1_18.extract_polygon_from_kml(
-                './scenario_mining/exiD_scenario_mining/playground1-18_lane-5_OnRamp.kml',
-                ['lane-8.1', 'lane-8.2', 'lane-6.2', 'lane-7.1', 'lane-8.1'],
-                x_utm_origin_1_18,
-                y_utm_origin_1_18
-            )
-            '''
             # 定义多边形的顶点
             onramp_polygon_1_18_coords = [(282, -131), (355, -210), (358, -207), (284, -127), (282, -131)]
 
             onramp_polygon_1_18 = Polygon(onramp_polygon_1_18_coords)
-            '''
-            offramp_polygon_1_18 = playground1_18.extract_polygon_from_kml(
-                './scenario_mining/exiD_scenario_mining/playground1-18_lane4_OffRamp.kml',
-                ['lane6.1', 'lane6.2', 'lane6.3', 'lane7.2', 'lane7.1', 'lane6.1'],
-                x_utm_origin_1_18,
-                y_utm_origin_1_18
-            )
-            '''
+
             offramp_polygon_1_18_coords = [(374, -160), (395, -191), (432, -244), (435, -242), (378, -157), (374, -160)]
             offramp_polygon_1_18 = Polygon(offramp_polygon_1_18_coords)
-            '''
-            lanes_polygons_1_18 = [
-                (1, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane1.4', 'lane1.5', 'lane1.6', 'lane1.7', 'lane1.8', 
-                    'lane2.8', 'lane2.7', 'lane2.6', 'lane2.5', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (2, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane2.5', 'lane2.6', 'lane2.7', 'lane2.8', 
-                    'lane3.8', 'lane3.7', 'lane3.6', 'lane3.5', 'lane3.4', 'lane3.3', 'lane3.2', 'lane3.1', 'lane2.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (3, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane3.kml', [
-                    'lane4.1', 'lane4.2', 'lane4.3', 'lane4.4', 'lane4.5', 'lane4.6', 'lane4.7', 
-                    'lane5.7', 'lane5.6', 'lane5.5', 'lane5.4', 'lane5.3', 'lane5.2', 'lane5.1', 'lane4.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (4, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane4.kml', [
-                    'lane6.1', 'lane6.2', 'lane6.3', 'lane6.4', 'lane6.5', 'lane6.6', 'lane7.5', 'lane7.4', 
-                    'lane7.3', 'lane7.2', 'lane7.1', 'lane6.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (4, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane4_OffRamp.kml', [
-                    'lane6.1', 'lane6.2', 'lane6.3', 'lane7.2', 'lane7.1', 'lane6.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (-1, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane-1.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-2.5', 'lane-1.5', 'lane-1.4', 
-                    'lane-1.3', 'lane-1.2', 'lane-1.1', 'lane-2.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (-2, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane-2.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 
-                    'lane-2.5', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-3.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (-3, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane-3.kml', [
-                    'lane-4.1', 'lane-4.2', 'lane-3.3', 'lane-3.2', 'lane-3.1', 'lane-4.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (-4, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane-4.kml', [
-                    'lane-6.1', 'lane-6.2', 'lane-6.3', 'lane-6.4', 'lane-6.5', 'lane-3.6', 'lane-3.5', 
-                    'lane-3.4', 'lane-5.3', 'lane-5.2', 'lane-5.1', 'lane-6.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (-5, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane-5.kml', [
-                    'lane-8.1', 'lane-8.2', 'lane-8.3', 'lane-6.4', 'lane-6.3', 'lane-6.2', 'lane-7.1', 'lane-8.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-                (-5, playground1_18.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground1-18_lane-5_OnRamp.kml', [
-                    'lane-8.1', 'lane-8.2', 'lane-6.2', 'lane-7.1', 'lane-8.1'
-                ], x_utm_origin_1_18, y_utm_origin_1_18)),
-            ]
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = [
-                (index, mapping(polygon)) for index, polygon in lanes_polygons_1_18
-            ]
-
-            # 将数据保存到 JSON 文件中
-            with open('lanes_polygons_1_18.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 lanes_polygons_1_18.json 文件中")          
-            '''
             # 提供的 JSON 数据
             json_data = [
                 [
@@ -775,106 +708,8 @@ def select_playground(file_path):
                 input_file_1_18 = f'{index}_tracks.csv'
                 output_file_1_18 = f'{index}_updated_tracks.csv'
             playground1_18.update_track_data(input_file_1_18, output_file_1_18, onramp_polygon_1_18, offramp_polygon_1_18, lanes_polygons_1_18)
-            '''
-            # 创建并绘制playground1-18的多边形
-            kml_files_and_names_1_18 = [
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane1.4', 'lane1.5',
-                    'lane1.6', 'lane1.7', 'lane1.8', 'lane2.8', 'lane2.7',
-                    'lane2.6', 'lane2.5', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane2.5',
-                    'lane2.6', 'lane2.7', 'lane2.8', 'lane3.8', 'lane3.7',
-                    'lane3.6', 'lane3.5', 'lane3.4', 'lane3.3', 'lane3.2', 'lane3.1', 'lane2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane3.kml', [
-                    'lane4.1', 'lane4.2', 'lane4.3', 'lane4.4', 'lane4.5', 'lane4.6', 'lane4.7',
-                    'lane5.7', 'lane5.6', 'lane5.5', 'lane5.4', 'lane5.3', 'lane5.2', 'lane5.1', 'lane4.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane4.kml', [
-                    'lane6.1', 'lane6.2', 'lane6.3', 'lane6.4', 'lane6.5', 'lane6.6',
-                    'lane7.5', 'lane7.4', 'lane7.3', 'lane7.2', 'lane7.1', 'lane6.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane4_OffRamp.kml', [
-                    'lane6.1', 'lane6.2', 'lane6.3', 'lane7.2', 'lane7.1', 'lane6.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane-1.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-2.5',
-                    'lane-1.5', 'lane-1.4', 'lane-1.3', 'lane-1.2', 'lane-1.1', 'lane-2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane-2.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7',
-                    'lane-2.5', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane-3.kml', [
-                    'lane-4.1', 'lane-4.2', 'lane-3.3', 'lane-3.2', 'lane-3.1', 'lane-4.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane-4.kml', [
-                    'lane-6.1', 'lane-6.2', 'lane-6.3', 'lane-6.4', 'lane-6.5',
-                    'lane-3.6', 'lane-3.5', 'lane-3.4', 'lane-5.3', 'lane-5.2', 'lane-5.1', 'lane-6.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane-5.kml', [
-                    'lane-8.1', 'lane-8.2', 'lane-8.3', 'lane-6.4', 'lane-6.3', 'lane-6.2',
-                    'lane-7.1', 'lane-8.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground1-18_lane-5_OnRamp.kml', [
-                    'lane-8.1', 'lane-8.2', 'lane-6.2', 'lane-7.1', 'lane-8.1'
-                ])
-            ]
-            '''
-            '''
-            # 保存 kml_files_and_names_1_18 到文件
-            with open('kml_files_and_names_1_18.pkl', 'wb') as f:
-                pickle.dump(kml_files_and_names_1_18, f)
-            
-            # 从文件中加载 kml_files_and_names_1_18
-            with open('kml_files_and_names_1_18.pkl', 'rb') as f:
-                kml_files_and_names_1_18 = pickle.load(f)
-            '''
-            '''
-            labels_1_18 = [
-                'lane 1', 'lane 2', 'lane 3', 'lane 4', 'lane 4 OffRamp',
-                'lane -1', 'lane -2', 'lane -3', 'lane -4', 'lane -5', 'lane 5 OnRamp'
-            ]
-
-            colors_1_18 = [
-                'red', 'blue', 'green', 'purple', 'orange', 
-                'cyan', 'magenta', 'yellow', 'brown', 'pink', 'grey'
-            ]
-            playground1_18.create_polygon_and_plot(kml_files_and_names_1_18, labels_1_18, colors_1_18, x_utm_origin_1_18, y_utm_origin_1_18)
-            '''
         elif 19 <= index <= 38:
 
-            # 获取playground19-38的xUtmOrigin和yUtmOrigin
-            #recordings_meta_file_19_38 =  f'./{index}_recordingMeta.csv'  
-            #x_utm_origin_19_38, y_utm_origin_19_38 = get_utm_origin(recordings_meta_file_19_38)
-            #x_utm_origin_19_38, y_utm_origin_19_38 = 351816.7000,5651523.4000
-            # 提取playground19-38 KML文件中的多边形
-            '''
-            onramp_polygons_19_38 = {
-                'playground19-38_lane-4_OnRamp': (playground19_38.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground19-38_lane-4_OnRamp.kml',
-                    ['lane-5.4', 'lane-5.5', 'lane-5.6', 'lane-5.7', 'lane-6.7', 'lane-6.6', 'lane-6.5', 'lane-6.4', 'lane-5.4'],
-                    x_utm_origin_19_38,
-                    y_utm_origin_19_38
-                ), -4),
-                'playground19-38_lane4_OnRamp': (playground19_38.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground19-38_lane4_OnRamp.kml',
-                    ['lane5.2', 'lane5.1', 'lane5.0', 'lane6.0', 'lane6.1', 'lane6.2', 'lane5.2'],
-                    x_utm_origin_19_38,
-                    y_utm_origin_19_38
-                ), 4)
-            }
-            # 将多边形转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {key: (mapping(polygon), value) for key, (polygon, value) in onramp_polygons_19_38.items()}
-
-            # 将数据保存到 JSON 文件中
-            with open('onramp_polygons_19_38.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 onramp_polygons_19_38.json 文件中")
-            '''
             onramp_polygon_19_38_coords_1 = [
                 (417.9635702712694, -237.5015376629308),
                 (400.2264643313829, -214.5553731545806),
@@ -905,30 +740,6 @@ def select_playground(file_path):
                 'playground19-38_lane-4_OnRamp': (onramp_polygon_19_38_1, -4),
                 'playground19-38_lane4_OnRamp': (onramp_polygon_19_38_2, 4)
             }
-            '''
-            offramp_polygons_19_38 = {
-                'playground19-38_lane-5_OffRamp': (playground19_38.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground19-38_lane-5_OffRamp.kml',
-                    ['lane-6.1', 'lane-6.2', 'lane-6.3', 'lane-7.3', 'lane-7.2', 'lane-7.1', 'lane-6.1'],
-                    x_utm_origin_19_38,
-                    y_utm_origin_19_38
-                ), -5),
-                'playground19-38_lane4_OffRamp': (playground19_38.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground19-38_lane4_OffRamp.kml',
-                    ['lane5.5', 'lane5.4', 'lane5.3', 'lane6.3', 'lane6.4', 'lane6.5', 'lane5.5'],
-                    x_utm_origin_19_38,
-                    y_utm_origin_19_38
-                ), 4)
-            }
-            # 将多边形转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {key: (mapping(polygon), value) for key, (polygon, value) in offramp_polygons_19_38.items()}
-
-            # 将数据保存到 JSON 文件中
-            with open('offramp_polygons_19_38.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 offramp_polygons_19_38.json 文件中")
-            '''
             # 从JSON数据中提取的多边形坐标和值
             offramp_polygon_19_38_coords_1 = [
                 (557.5267711196211, -421.4385609002784),
@@ -958,44 +769,6 @@ def select_playground(file_path):
                 'playground19-38_lane-5_OffRamp': (offramp_polygon_19_38_1, -5),
                 'playground19-38_lane4_OffRamp': (offramp_polygon_19_38_2, 4)
             }
-            '''
-            lanes_polygons_19_38 = [
-                (1, playground19_38.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground19-38_lane1.kml', [
-                    'lane1.4', 'lane1.3', 'lane1.2', 'lane1.1', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.4'
-                ], x_utm_origin_19_38, y_utm_origin_19_38)),
-                (2, playground19_38.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground19-38_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane3.1', 'lane3.2', 'lane3.3', 'lane3.4', 'lane2.1'
-                ], x_utm_origin_19_38, y_utm_origin_19_38)),
-                (3, playground19_38.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground19-38_lane3.kml', [
-                    'lane4.4', 'lane4.3', 'lane4.2', 'lane4.1', 'lane5.1', 'lane5.2', 'lane5.3', 'lane5.4', 'lane4.4'
-                ], x_utm_origin_19_38, y_utm_origin_19_38)),
-                (4, playground19_38.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground19-38_lane4.kml', [
-                    'lane5.5', 'lane5.4', 'lane5.3', 'lane5.2', 'lane5.1', 'lane6.0', 'lane6.1', 'lane6.2', 'lane6.3', 'lane6.4', 'lane5.5'
-                ], x_utm_origin_19_38, y_utm_origin_19_38)),
-                (-1, playground19_38.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground19-38_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ], x_utm_origin_19_38, y_utm_origin_19_38)),
-                (-2, playground19_38.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground19-38_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.1', 'lane-2.1'
-                ], x_utm_origin_19_38, y_utm_origin_19_38)),
-                (-3, playground19_38.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground19-38_lane-3.kml', [
-                    'lane-4.1', 'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-5.1', 'lane-4.1'
-                ], x_utm_origin_19_38, y_utm_origin_19_38)),
-                (-4, playground19_38.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground19-38_lane-4.kml', [
-                    'lane-5.1', 'lane-5.2', 'lane-5.3', 'lane-5.4', 'lane-5.5', 'lane-5.6', 'lane-5.7', 'lane-6.7', 'lane-6.6', 'lane-6.5', 'lane-6.4', 'lane-6.3', 'lane-6.2', 'lane-6.1', 'lane-5.1'
-                ], x_utm_origin_19_38, y_utm_origin_19_38)),
-            ]
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = [
-                (index, mapping(polygon)) for index, polygon in lanes_polygons_19_38
-            ]
-
-            # 将数据保存到 JSON 文件中
-            with open('lanes_polygons_19_38.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 lanes_polygons_19_38.json 文件中")
-            '''
             # 提供的 JSON 数据
             json_data = [
                 [
@@ -1409,87 +1182,19 @@ def select_playground(file_path):
             input_file_19_38 = f'{index}_tracks.csv'
             output_file_19_38 = f'{index}_updated_tracks.csv'
             playground19_38.update_track_data(input_file_19_38, output_file_19_38, onramp_polygons_19_38, offramp_polygons_19_38, lanes_polygons_19_38)
-            '''
-            # 创建并绘制playground19-38的多边形
-            kml_files_and_names_19_38 = [
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane1.kml', [
-                    'lane1.4', 'lane1.3', 'lane1.2', 'lane1.1', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.4'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane3.1', 'lane3.2', 'lane3.3', 'lane3.4', 'lane2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane3.kml', [
-                    'lane4.4', 'lane4.3', 'lane4.2', 'lane4.1', 'lane5.1', 'lane5.2', 'lane5.3', 'lane5.4', 'lane4.4'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane4.kml', [
-                    'lane5.5', 'lane5.4', 'lane5.3', 'lane5.2', 'lane5.1', 'lane6.0', 'lane6.1', 'lane6.2', 'lane6.3', 'lane6.4', 'lane5.5'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane4_OffRamp.kml', [
-                    'lane5.5', 'lane5.4', 'lane5.3', 'lane6.3', 'lane6.4', 'lane6.5', 'lane5.5'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane4_OnRamp.kml', [
-                    'lane5.2', 'lane5.1', 'lane5.0', 'lane6.0', 'lane6.1', 'lane6.2', 'lane5.2'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.1', 'lane-2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane-3.kml', [
-                    'lane-4.1', 'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-5.1', 'lane-4.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane-4.kml', [
-                    'lane-5.1', 'lane-5.2', 'lane-5.3', 'lane-5.4', 'lane-5.5', 'lane-5.6', 'lane-5.7', 'lane-6.7', 'lane-6.6', 'lane-6.5', 'lane-6.4', 'lane-6.3', 'lane-6.2', 'lane-6.1', 'lane-5.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane-5_OffRamp.kml', [
-                    'lane-6.1', 'lane-6.2', 'lane-6.3', 'lane-7.3', 'lane-7.2', 'lane-7.1', 'lane-6.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground19-38_lane-4_OnRamp.kml', [
-                    'lane-5.4', 'lane-5.5', 'lane-5.6', 'lane-5.7', 'lane-6.7', 'lane-6.6', 'lane-6.5', 'lane-6.4', 'lane-5.4'
-                ])
-            ]
+            plot_polygons_from_json(json_data, ax)
+            # Set labels, title, and other plot parameters
+            ax.set_xlabel("X Coordinate")
+            ax.set_ylabel("Y Coordinate")
+            ax.set_title("Visualization of Polygons from JSON Data")
+            ax.legend()
+            ax.grid(True)
+            ax.axis('equal')
 
-            labels_19_38 = [
-                'lane 1', 'lane 2', 'lane 3', 'lane 4', 'lane 4 OffRamp',
-                'lane 4 OnRamp', 'lane -1', 'lane -2', 'lane -3', 'lane -4', 'lane -5 OffRamp', 'lane -4 OnRamp'
-            ]
+            # Show the plot
+            plt.show()
 
-            colors_19_38 = [
-                'red', 'blue', 'green', 'purple', 'orange', 
-                'cyan', 'magenta', 'yellow', 'brown', 'pink', 'grey', 'black'
-            ]
-        
-            playground19_38.create_polygon_and_plot(kml_files_and_names_19_38, labels_19_38, colors_19_38, x_utm_origin_19_38, y_utm_origin_19_38)
-            '''
         elif 39 <= index <= 52:
-
-
-            # 获取playground39-52的xUtmOrigin和yUtmOrigin
-            #recordings_meta_file_39_52 = f'./{index}_recordingMeta.csv' 
-            #x_utm_origin_39_52, y_utm_origin_39_52 = get_utm_origin(recordings_meta_file_39_52)
-            #x_utm_origin_39_52, y_utm_origin_39_52 = 298089.6,5626462.9
-            '''
-            # 提取playground39-52 KML文件中的多边形
-            onramp_polygons_39_52 = {
-                'playground39-52_lane-3_OnRamp': (playground39_52.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground39-52_lane-3_OnRamp.kml',
-                    ['lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-3.3'],
-                    x_utm_origin_39_52,
-                    y_utm_origin_39_52
-                ), -3)
-            }
-            save_data = {
-                key: (mapping(polygon), value) for key, (polygon, value) in onramp_polygons_39_52.items()
-            }
-
-            # 将数据保存到 JSON 文件中
-            with open('onramp_polygons_39_52.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 onramp_polygons_39_52.json 文件中")
-            '''
-
             # 提供的 JSON 数据
             json_data = {
                 "playground39-52_lane-3_OnRamp": [
@@ -1552,26 +1257,7 @@ def select_playground(file_path):
             onramp_polygons_39_52 = {
                 key: (shape(polygon_dict), value) for key, (polygon_dict, value) in json_data.items()
             }
-            '''
-            offramp_polygons_39_52 = {
-                'playground39-52_lane3_OffRamp': (playground39_52.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground39-52_lane3_OffRamp.kml',
-                    ['lane3.3', 'lane3.4', 'lane3.5', 'lane3.6', 'lane3.7', 'lane4.7', 'lane4.6', 'lane4.5', 'lane4.4', 'lane4.3', 'lane3.3'],
-                    x_utm_origin_39_52,
-                    y_utm_origin_39_52
-                ), 3)
-            }
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {
-                key: (mapping(polygon), value) for key, (polygon, value) in offramp_polygons_39_52.items()
-            }
 
-            # 将数据保存到 JSON 文件中
-            with open('offramp_polygons_39_52.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 offramp_polygons_39_52.json 文件中")
-            '''
             # 提供的 JSON 数据
             json_data = {
                 "playground39-52_lane3_OffRamp": [
@@ -1634,38 +1320,7 @@ def select_playground(file_path):
             offramp_polygons_39_52 = {
                 key: (shape(polygon_dict), value) for key, (polygon_dict, value) in json_data.items()
             }
-
-            '''
-            lanes_polygons_39_52 = [
-                (1, playground39_52.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground39-52_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane1.4', 'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane1.1'
-                ], x_utm_origin_39_52, y_utm_origin_39_52)),
-                (2, playground39_52.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground39-52_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane3.1', 'lane3.2', 'lane3.3', 'lane3.4', 'lane2.1'
-                ], x_utm_origin_39_52, y_utm_origin_39_52)),
-                (3, playground39_52.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground39-52_lane3.kml', [
-                    'lane3.2', 'lane3.3', 'lane3.4', 'lane3.5', 'lane3.6', 'lane3.7', 'lane4.7', 'lane4.6', 'lane4.5', 'lane4.4', 'lane4.3', 'lane4.2', 'lane4.1', 'lane3.2'
-                ], x_utm_origin_39_52, y_utm_origin_39_52)),
-                (-1, playground39_52.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground39-52_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ], x_utm_origin_39_52, y_utm_origin_39_52)),
-                (-2, playground39_52.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground39-52_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-2.1'
-                ], x_utm_origin_39_52, y_utm_origin_39_52)),
-                (-3, playground39_52.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground39-52_lane-3.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ], x_utm_origin_39_52, y_utm_origin_39_52))
-            ]
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = [
-                (index, mapping(polygon)) for index, polygon in lanes_polygons_39_52
-            ]
-
-            # 将数据保存到 JSON 文件中
-            with open('lanes_polygons_39_52.json', 'w') as f:
-                json.dump(save_data, f, indent=4)     
-            '''
-            # 提供的 JSON 数据
+           # 提供的 JSON 数据
             json_data = [
                 [
                     1,
@@ -1906,6 +1561,10 @@ def select_playground(file_path):
                                     -440.420826215297
                                 ],
                                 [
+                                    621.4728849959793,
+                                    -466.8916496504098
+                                ],
+                                [
                                     537.9852168856887,
                                     -607.4726453796029
                                 ],
@@ -1994,75 +1653,20 @@ def select_playground(file_path):
             input_file_39_52 = f'{index}_tracks.csv'
             output_file_39_52 = f'{index}_updated_tracks.csv'
             playground39_52.update_track_data(input_file_39_52, output_file_39_52, onramp_polygons_39_52, offramp_polygons_39_52, lanes_polygons_39_52)
-            '''
-            # 创建并绘制playground39-52的多边形
-            kml_files_and_names_39_52 = [
-                ('./scenario_mining/exiD_scenario_mining/playground39-52_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane1.4', 'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground39-52_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane3.1', 'lane3.2', 'lane3.3', 'lane3.4', 'lane2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground39-52_lane3.kml', [
-                    'lane3.2', 'lane3.3', 'lane3.4', 'lane3.5', 'lane3.6', 'lane3.7', 'lane4.7', 'lane4.6', 'lane4.5', 'lane4.4', 'lane4.3', 'lane4.2', 'lane4.1', 'lane3.2'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground39-52_lane3_OffRamp.kml', [
-                    'lane3.3', 'lane3.4', 'lane3.5', 'lane3.6', 'lane3.7', 'lane4.7', 'lane4.6', 'lane4.5', 'lane4.4', 'lane4.3', 'lane3.3'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground39-52_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground39-52_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground39-52_lane-3.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground39-52_lane-3_OnRamp.kml', [
-                    'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-3.3'
-                ])
-            ]
+        
+            plot_polygons_from_json(json_data, ax)
+            # Set labels, title, and other plot parameters
+            ax.set_xlabel("X Coordinate")
+            ax.set_ylabel("Y Coordinate")
+            ax.set_title("Visualization of Polygons from JSON Data")
+            ax.legend()
+            ax.grid(True)
+            ax.axis('equal')
 
-
-
-            labels_39_52 = [
-                'lane 1', 'lane 2', 'lane 3', 'lane 3 OffRamp', 'lane -1', 'lane -2', 'lane -3', 'lane 3 OnRamp'
-            ]
-
-            colors_39_52 = [
-                'red', 'blue', 'green', 'purple', 'orange', 'cyan', 'magenta', 'yellow'
-            ]
-
-            playground39_52.create_polygon_and_plot(kml_files_and_names_39_52, labels_39_52, colors_39_52, x_utm_origin_39_52, y_utm_origin_39_52)
-            '''
+            # Show the plot
+            plt.show()
         elif 53 <= index <= 60:
 
-
-            # 获取playground53-60的xUtmOrigin和yUtmOrigin
-            #recordings_meta_file_53_60 = f'./{index}_recordingMeta.csv' 
-            #x_utm_origin_53_60, y_utm_origin_53_60 = get_utm_origin(recordings_meta_file_53_60)
-            #x_utm_origin_53_60, y_utm_origin_53_60 = 334905.3,5645453.9
-            # 提取playground53-60 KML文件中的多边形
-            '''
-            onramp_polygons_53_60 = {
-                'playground53-60_lane-3_OnRamp': (playground53_60.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground53-60_lane-3_OnRamp.kml',
-                    ['lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-3.2'],
-                    x_utm_origin_53_60,
-                    y_utm_origin_53_60
-                ), -3)
-            }
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {
-                key: (mapping(polygon), value) for key, (polygon, value) in onramp_polygons_53_60.items()
-            }
-
-            # 将数据保存到 JSON 文件中
-            with open('onramp_polygons_53_60.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 onramp_polygons_53_60.json 文件中") 
-            '''      
             # 提供的 JSON 数据
             json_data = {
                 "playground53-60_lane-3_OnRamp": [
@@ -2133,28 +1737,6 @@ def select_playground(file_path):
             onramp_polygons_53_60 = {
                 key: (shape(polygon_dict), value) for key, (polygon_dict, value) in json_data.items()
             } 
-
-            '''
-            offramp_polygons_53_60 = {
-                'playground53-60_lane3_OffRamp': (playground53_60.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground53-60_lane3_OffRamp.kml',
-                    ['lane3.2', 'lane3.3', 'lane3.4', 'lane3.5', 'lane3.6', 'lane3.7', 'lane4.7', 'lane4.6', 'lane4.5', 'lane4.4', 'lane4.3', 'lane4.2', 'lane3.2'],
-                    x_utm_origin_53_60,
-                    y_utm_origin_53_60
-                ), 3)
-            }
-
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {
-                key: (mapping(polygon), value) for key, (polygon, value) in offramp_polygons_53_60.items()
-            }
-
-            # 将数据保存到 JSON 文件中
-            with open('offramp_polygons_53_60.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 offramp_polygons_53_60.json 文件中")
-            '''
             # 提供的 JSON 数据
             json_data = {
                 "playground53-60_lane3_OffRamp": [
@@ -2217,41 +1799,7 @@ def select_playground(file_path):
             offramp_polygons_53_60 = {
                 key: (shape(polygon_dict), value) for key, (polygon_dict, value) in json_data.items()
             }
-
-            '''
-            lanes_polygons_53_60 = [
-                (1, playground53_60.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground53-60_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane1.4', 'lane1.5', 'lane2.5', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.1'
-                ], x_utm_origin_53_60, y_utm_origin_53_60)),
-                (2, playground53_60.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground53-60_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane2.5', 'lane3.5', 'lane3.4', 'lane3.3', 'lane3.2', 'lane3.1', 'lane2.1'
-                ], x_utm_origin_53_60, y_utm_origin_53_60)),
-                (3, playground53_60.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground53-60_lane3.kml', [
-                    'lane3.1', 'lane3.2', 'lane3.3', 'lane3.4', 'lane3.5', 'lane3.6', 'lane4.6', 'lane4.5', 'lane4.4', 'lane4.3', 'lane4.2', 'lane4.1', 'lane3.1'
-                ], x_utm_origin_53_60, y_utm_origin_53_60)),
-                (-1, playground53_60.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground53-60_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-1.5', 'lane-2.5', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ], x_utm_origin_53_60, y_utm_origin_53_60)),
-                (-2, playground53_60.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground53-60_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-2.5', 'lane-3.5', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.1'
-                ], x_utm_origin_53_60, y_utm_origin_53_60)),
-                (-3, playground53_60.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground53-60_lane-3.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ], x_utm_origin_53_60, y_utm_origin_53_60))
-            ]
-
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = [
-                (index, mapping(polygon)) for index, polygon in lanes_polygons_53_60
-            ]
-
-            # 将数据保存到 JSON 文件中
-            with open('lanes_polygons_53_60.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 lanes_polygons_53_60.json 文件中")
-            '''
-            # 提供的 JSON 数据
+           # 提供的 JSON 数据
             json_data = [
                 [
                     1,
@@ -2612,74 +2160,8 @@ def select_playground(file_path):
             input_file_53_60 = f'{index}_tracks.csv'
             output_file_53_60 = f'{index}_updated_tracks.csv'
             playground53_60.update_track_data(input_file_53_60, output_file_53_60, onramp_polygons_53_60, offramp_polygons_53_60, lanes_polygons_53_60)
-            '''
-            # 创建并绘制playground53-60的多边形
-            kml_files_and_names_53_60 = [
-                ('./scenario_mining/exiD_scenario_mining/playground53-60_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane1.4', 'lane1.5', 'lane2.5', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground53-60_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane2.5', 'lane3.5', 'lane3.4', 'lane3.3', 'lane3.2', 'lane3.1', 'lane2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground53-60_lane3.kml', [
-                    'lane3.1', 'lane3.2', 'lane3.3', 'lane3.4', 'lane3.5', 'lane3.6', 'lane4.6', 'lane4.5', 'lane4.4', 'lane4.3', 'lane4.2', 'lane4.1', 'lane3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground53-60_lane-3_OnRamp.kml', [
-                    'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-3.2'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground53-60_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-1.5', 'lane-2.5', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground53-60_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-2.5', 'lane-3.5', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground53-60_lane-3.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground53-60_lane-3_OnRamp.kml', [
-                    'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-3.2'
-                ])
-            ]
-
-            labels_53_60 = [
-                'lane 1', 'lane 2', 'lane 3', 'lane -3 OnRamp', 'lane -1', 'lane -2', 'lane -3', 'lane 3 OnRamp'
-            ]
-
-            colors_53_60 = [
-                'red', 'blue', 'green', 'purple', 'orange', 'cyan', 'magenta', 'yellow'
-            ]
-
-            playground53_60.create_polygon_and_plot(kml_files_and_names_53_60, labels_53_60, colors_53_60, x_utm_origin_53_60, y_utm_origin_53_60)
-            '''
 
         elif 61 <= index <= 72:
-
-            # 获取playground61-72的xUtmOrigin和yUtmOrigin
-            #recordings_meta_file_61_72 = f'./{index}_recordingMeta.csv'  
-            #x_utm_origin_61_72, y_utm_origin_61_72 = get_utm_origin(recordings_meta_file_61_72)
-            x_utm_origin_61_72, y_utm_origin_61_72 = 353013.5,5640508.6
-            '''
-            # 提取playground61-72 KML文件中的多边形
-            onramp_polygons_61_72 = {
-                'playground61-72_lane-4_OnRamp': (playground61_72.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground61-72_lane-4_OnRamp.kml',
-                    ['lane-4.1', 'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-5.1'],
-                    x_utm_origin_61_72,
-                    y_utm_origin_61_72
-                ), -4)
-            }
-
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {
-                key: (mapping(polygon), value) for key, (polygon, value) in onramp_polygons_61_72.items()
-            }
-
-            # 将数据保存到 JSON 文件中
-            with open('onramp_polygons_61_72.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 onramp_polygons_61_72.json 文件中")
-            '''
             # 提供的 JSON 数据
             json_data = {
                 "playground61-72_lane-4_OnRamp": [
@@ -2734,28 +2216,6 @@ def select_playground(file_path):
             onramp_polygons_61_72 = {
                 key: (shape(polygon_dict), value) for key, (polygon_dict, value) in json_data.items()
             }
-
-            '''
-            offramp_polygons_61_72 = {
-                'playground61-72_lane5_OffRamp': (playground61_72.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground61-72_lane5_OffRamp.kml',
-                    ['lane5.2', 'lane5.3', 'lane5.4', 'lane5.5', 'lane5.6', 'lane5.7', 'lane6.7', 'lane6.6', 'lane6.5', 'lane6.4', 'lane6.3', 'lane6.2'],
-                    x_utm_origin_61_72,
-                    y_utm_origin_61_72
-                ), 5)
-            }
-        
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {
-                key: (mapping(polygon), value) for key, (polygon, value) in offramp_polygons_61_72.items()
-            }
-
-            # 将数据保存到 JSON 文件中
-            with open('offramp_polygons_61_72.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 offramp_polygons_61_72.json 文件中")
-            '''
             # 提供的 JSON 数据
             json_data = {
                 "playground61-72_lane5_OffRamp": [
@@ -2826,49 +2286,6 @@ def select_playground(file_path):
             offramp_polygons_61_72 = {
                 key: (shape(polygon_dict), value) for key, (polygon_dict, value) in json_data.items()
             }
-
-            '''
-            lanes_polygons_61_72 = [
-                (1, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72)),
-                (2, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane3.3', 'lane3.2', 'lane3.1', 'lane2.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72)),
-                (3, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane3.kml', [
-                    'lane3.1', 'lane3.2', 'lane3.3', 'lane4.3', 'lane4.2', 'lane4.1', 'lane3.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72)),
-                (4, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane4.kml', [
-                    'lane4.1', 'lane4.2', 'lane4.3', 'lane4.4', 'lane4.5', 'lane4.6', 'lane5.5', 'lane5.4', 'lane5.3', 'lane5.2', 'lane5.1', 'lane4.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72)),
-                (5, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane5.kml', [
-                    'lane5.1', 'lane5.2', 'lane5.3', 'lane5.4', 'lane5.5', 'lane5.6', 'lane5.7', 'lane6.7', 'lane6.6', 'lane6.5', 'lane6.4', 'lane6.3', 'lane6.2', 'lane6.1', 'lane5.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72)),
-                (-1, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72)),
-                (-2, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.1', 'lane-2.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72)),
-                (-3, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane-3.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72)),
-                (-4, playground61_72.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground61-72_lane-4.kml', [
-                    'lane-4.1', 'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-4.5', 'lane-4.6', 'lane-4.7', 'lane-5.7', 'lane-5.6', 'lane-5.5', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-5.1'
-                ], x_utm_origin_61_72, y_utm_origin_61_72))
-            ]
-
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = [
-                (index, mapping(polygon)) for index, polygon in lanes_polygons_61_72
-            ]
-
-            # 将数据保存到 JSON 文件中
-            with open('lanes_polygons_61_72.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 lanes_polygons_61_72.json 文件中")
-            '''
 
             # 提供的 JSON 数据
             json_data = [
@@ -3333,83 +2750,9 @@ def select_playground(file_path):
             input_file_61_72 = f'{index}_tracks.csv'
             output_file_61_72 = f'{index}_updated_tracks.csv'
             playground61_72.update_track_data(input_file_61_72, output_file_61_72, onramp_polygons_61_72, offramp_polygons_61_72, lanes_polygons_61_72)
-            '''
-            # 创建并绘制playground61-72的多边形
-            kml_files_and_names_61_72 = [
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane3.3', 'lane3.2', 'lane3.1', 'lane2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane3.kml', [
-                    'lane3.1', 'lane3.2', 'lane3.3', 'lane4.3', 'lane4.2', 'lane4.1', 'lane3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane4.kml', [
-                    'lane4.1', 'lane4.2', 'lane4.3', 'lane4.4', 'lane4.5', 'lane4.6', 'lane5.5', 'lane5.4', 'lane5.3', 'lane5.2', 'lane5.1', 'lane4.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane5.kml', [
-                    'lane5.1', 'lane5.2', 'lane5.3', 'lane5.4', 'lane5.5', 'lane5.6', 'lane5.7', 'lane6.7', 'lane6.6', 'lane6.5', 'lane6.4', 'lane6.3', 'lane6.2', 'lane6.1', 'lane5.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane5_OffRamp.kml', [
-                    'lane5.2', 'lane5.3', 'lane5.4', 'lane5.5', 'lane5.6', 'lane5.7', 'lane6.7', 'lane6.6', 'lane6.5', 'lane6.4', 'lane6.3', 'lane6.2', 'lane5.2'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.1', 'lane-2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane-3.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane-4.kml', [
-                    'lane-4.1', 'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-4.5', 'lane-4.6', 'lane-4.7', 'lane-5.7', 'lane-5.6', 'lane-5.5', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-5.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground61-72_lane-4_OnRamp.kml', [
-                    'lane-4.1', 'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-5.1'
-                ])
-            ]
-
-            labels_61_72 = [
-                'lane 1', 'lane 2', 'lane 3', 'lane 4', 'lane 5', 'lane 5 OffRamp', 'lane -1', 'lane -2', 'lane -3', 'lane -4', 'lane -4 OnRamp'
-            ]
-
-            colors_61_72 = [
-                'red', 'blue', 'green', 'purple', 'orange', 'cyan', 'magenta', 'yellow', 'brown', 'pink', 'grey'
-            ]
-
-            playground61_72.create_polygon_and_plot(kml_files_and_names_61_72, labels_61_72, colors_61_72, x_utm_origin_61_72, y_utm_origin_61_72)
-            '''
 
 
         elif 73 <= index <= 77:
-
-            # 获取playground73-77的xUtmOrigin和yUtmOrigin
-            #recordings_meta_file_73_77 = f'./{index}_recordingMeta.csv'  
-            #x_utm_origin_73_77, y_utm_origin_73_77 = get_utm_origin(recordings_meta_file_73_77)
-            x_utm_origin_73_77, y_utm_origin_73_77 = 293790.2,5632271.9
-            '''
-            # 提取playground73-77 KML文件中的多边形
-            onramp_polygons_73_77 = {
-                'playground73-77_lane-3_2_OnRamp': (playground73_77.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground73-77_lane-3_2_OnRamp.kml',
-                    ['lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-3.8', 'lane-3.9', 'lane-4.9', 'lane-4.8', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3'],
-                    x_utm_origin_73_77,
-                    y_utm_origin_73_77
-                ), -3)
-            }
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {
-                key: (mapping(polygon), value) for key, (polygon, value) in onramp_polygons_73_77.items()
-            }
-
-            # 将数据保存到 JSON 文件中
-            with open('onramp_polygons_73_77.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 onramp_polygons_73_77.json 文件中")
-            '''
 
             # 提供的 JSON 数据
             json_data = {
@@ -3485,42 +2828,6 @@ def select_playground(file_path):
             onramp_polygons_73_77 = {
                 key: (shape(polygon_dict), value) for key, (polygon_dict, value) in json_data.items()
             }
-
-            '''
-            lanes_polygons_73_77 = [
-                (1, playground73_77.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground73-77_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane1.4', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.1'
-                ], x_utm_origin_73_77, y_utm_origin_73_77)),
-                (2, playground73_77.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground73-77_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane3.5', 'lane3.4', 'lane3.3', 'lane3.2', 'lane3.1', 'lane2.1'
-                ], x_utm_origin_73_77, y_utm_origin_73_77)),
-                (3, playground73_77.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground73-77_lane3.kml', [
-                    'lane3.1', 'lane3.2', 'lane3.3', 'lane3.4', 'lane4.3', 'lane4.2', 'lane4.1', 'lane3.1'
-                ], x_utm_origin_73_77, y_utm_origin_73_77)),
-                (-1, playground73_77.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground73-77_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ], x_utm_origin_73_77, y_utm_origin_73_77)),
-                (-2, playground73_77.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground73-77_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.1'
-                ], x_utm_origin_73_77, y_utm_origin_73_77)),
-                (-3, playground73_77.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground73-77_lane-3_1.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ], x_utm_origin_73_77, y_utm_origin_73_77)),
-                (-3, playground73_77.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground73-77_lane-3_2.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-3.8', 'lane-3.9', 'lane-4.9', 'lane-4.8', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ], x_utm_origin_73_77, y_utm_origin_73_77))
-            ]
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = [
-                (index, mapping(polygon)) for index, polygon in lanes_polygons_73_77
-            ]
-
-            # 将数据保存到 JSON 文件中
-            with open('lanes_polygons_73_77.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 lanes_polygons_73_77.json 文件中")
-            '''
             # 提供的 JSON 数据
             json_data = [
                 [
@@ -3875,71 +3182,8 @@ def select_playground(file_path):
             input_file_73_77 = f'{index}_tracks.csv'
             output_file_73_77 = f'{index}_updated_tracks.csv'
             playground73_77.update_track_data(input_file_73_77, output_file_73_77, onramp_polygons_73_77, {}, lanes_polygons_73_77)
-            '''
-            # 创建并绘制playground73-77的多边形
-            kml_files_and_names_73_77 = [
-                ('./scenario_mining/exiD_scenario_mining/playground73-77_lane1.kml', [
-                    'lane1.1', 'lane1.2', 'lane1.3', 'lane1.4', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.1', 'lane1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground73-77_lane2.kml', [
-                    'lane2.1', 'lane2.2', 'lane2.3', 'lane2.4', 'lane3.5', 'lane3.4', 'lane3.3', 'lane3.2', 'lane3.1', 'lane2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground73-77_lane3.kml', [
-                    'lane3.1', 'lane3.2', 'lane3.3', 'lane3.4', 'lane4.3', 'lane4.2', 'lane4.1', 'lane3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground73-77_lane-1.kml', [
-                    'lane-1.1', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.1', 'lane-1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground73-77_lane-2.kml', [
-                    'lane-2.1', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground73-77_lane-3_1.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground73-77_lane-3_2.kml', [
-                    'lane-3.1', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-3.8', 'lane-3.9', 'lane-4.9', 'lane-4.8', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3', 'lane-4.2', 'lane-4.1', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground73-77_lane-3_2_OnRamp.kml', [
-                    'lane-3.3', 'lane-3.4', 'lane-3.5', 'lane-3.6', 'lane-3.7', 'lane-3.8', 'lane-3.9', 'lane-4.9', 'lane-4.8', 'lane-4.7', 'lane-4.6', 'lane-4.5', 'lane-4.4', 'lane-4.3'
-                ])
-            ]
-
-            labels_73_77 = [
-                'lane 1', 'lane 2', 'lane 3', 'lane -1', 'lane -2', 'lane -3_1', 'lane -3_2', 'lane -3_2 OnRamp'
-            ]
-
-            colors_73_77 = [
-                'red', 'blue', 'green', 'purple', 'orange', 'cyan', 'magenta', 'yellow'
-            ]
-
-            playground73_77.create_polygon_and_plot(kml_files_and_names_73_77, labels_73_77, colors_73_77, x_utm_origin_73_77, y_utm_origin_73_77)
-            '''
         elif 78 <= index <= 92:
-            # 获取playground78-92的xUtmOrigin和yUtmOrigin
-            #recordings_meta_file_78_92 = f'./{index}_recordingMeta.csv'  
-            #x_utm_origin_78_92, y_utm_origin_78_92 = get_utm_origin(recordings_meta_file_78_92)
-            x_utm_origin_78_92, y_utm_origin_78_92 = 325298.1,5635819.6
-            '''
-            # 提取playground78-92 KML文件中的多边形
-            onramp_polygons_78_92 = {
-                'playground78-92_lane-4_OnRamp': (playground78_92.extract_polygon_from_kml(
-                    './scenario_mining/exiD_scenario_mining/playground78-92_lane-4_OnRamp.kml',
-                    ['lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-4.2'],
-                    x_utm_origin_78_92,
-                    y_utm_origin_78_92
-                ), -4)
-            }
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = {
-                key: (mapping(polygon), value) for key, (polygon, value) in onramp_polygons_78_92.items()
-            }
 
-            # 将数据保存到 JSON 文件中
-            with open('onramp_polygons_78_92.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 onramp_polygons_78_92.json 文件中")
-            '''
             # 提供的 JSON 数据
             json_data = {
                 "playground78-92_lane-4_OnRamp": [
@@ -3986,46 +3230,6 @@ def select_playground(file_path):
             onramp_polygons_78_92 = {
                 key: (shape(polygon_dict), value) for key, (polygon_dict, value) in json_data.items()
             }
-
-            '''
-            lanes_polygons_78_92 = [
-                (1, playground78_92.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground78-92_lane1.kml', [
-                    'lane1.1', 'lane1.0', 'lane1.2', 'lane1.3', 'lane1.4', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.0', 'lane2.1', 'lane1.1'
-                ], x_utm_origin_78_92, y_utm_origin_78_92)),
-                (2, playground78_92.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground78-92_lane2.kml', [
-                    'lane2.1', 'lane2.0', 'lane2.2', 'lane2.3', 'lane2.4', 'lane3.4', 'lane3.3', 'lane3.2', 'lane3.0', 'lane3.1', 'lane2.1'
-                ], x_utm_origin_78_92, y_utm_origin_78_92)),
-                (3, playground78_92.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground78-92_lane3.kml', [
-                    'lane3.1', 'lane3.0', 'lane3.2', 'lane3.3', 'lane3.4', 'lane4.4', 'lane4.3', 'lane4.2', 'lane4.0', 'lane4.1', 'lane3.1'
-                ], x_utm_origin_78_92, y_utm_origin_78_92)),
-                (4, playground78_92.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground78-92_lane4.kml', [
-                    'lane4.1', 'lane4.0', 'lane4.2', 'lane4.3', 'lane4.4', 'lane5.4', 'lane5.3', 'lane5.2', 'lane5.0', 'lane5.1', 'lane4.1'
-                ], x_utm_origin_78_92, y_utm_origin_78_92)),
-                (-1, playground78_92.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground78-92_lane-1.kml', [
-                    'lane-1.1', 'lane-1.0', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.0', 'lane-2.1', 'lane-1.1'
-                ], x_utm_origin_78_92, y_utm_origin_78_92)),
-                (-2, playground78_92.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground78-92_lane-2.kml', [
-                    'lane-2.1', 'lane-2.0', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.0', 'lane-3.1', 'lane-2.1'
-                ], x_utm_origin_78_92, y_utm_origin_78_92)),
-                (-3, playground78_92.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground78-92_lane-3.kml', [
-                    'lane-3.1', 'lane-3.0', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-4.5', 'lane-4.4', 'lane-4.3','lane-4.9','lane-4.0' ,'lane-4.2' , 'lane-4.1', 'lane-3.1'
-                ], x_utm_origin_78_92, y_utm_origin_78_92)),
-                (-4, playground78_92.extract_polygon_from_kml('./scenario_mining/exiD_scenario_mining/playground78-92_lane-4.kml', [
-                    'lane-4.1','lane-4.9', 'lane-4.0', 'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-5.0', 'lane-5.9','lane-5.1', 'lane-4.1'
-                ], x_utm_origin_78_92, y_utm_origin_78_92))
-            ]
-
-            # 将Polygon对象转换为GeoJSON格式的字典，并准备保存的数据结构
-            save_data = [
-                (index, mapping(polygon)) for index, polygon in lanes_polygons_78_92
-            ]
-
-            # 将数据保存到 JSON 文件中
-            with open('lanes_polygons_78_92.json', 'w') as f:
-                json.dump(save_data, f, indent=4)
-
-            print("数据已保存到 lanes_polygons_78_92.json 文件中")
-            '''
             # 提供的 JSON 数据
             json_data = [
                 [
@@ -4206,48 +3410,6 @@ def select_playground(file_path):
             input_file_78_92 = f'{index}_tracks.csv'
             output_file_78_92 = f'{index}_updated_tracks.csv'
             playground78_92.update_track_data(input_file_78_92, output_file_78_92, onramp_polygons_78_92, {}, lanes_polygons_78_92)
-            '''
-            # 创建并绘制playground78-92的多边形
-            kml_files_and_names_78_92 = [
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane1.kml', [
-                    'lane1.1', 'lane1.0', 'lane1.2', 'lane1.3', 'lane1.4', 'lane2.4', 'lane2.3', 'lane2.2', 'lane2.0', 'lane2.1', 'lane1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane2.kml', [
-                    'lane2.1', 'lane2.0', 'lane2.2', 'lane2.3', 'lane2.4', 'lane3.4', 'lane3.3', 'lane3.2', 'lane3.0', 'lane3.1', 'lane2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane3.kml', [
-                    'lane3.1', 'lane3.0', 'lane3.2', 'lane3.3', 'lane3.4', 'lane4.4', 'lane4.3', 'lane4.2', 'lane4.0', 'lane4.1', 'lane3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane4.kml', [
-                    'lane4.1', 'lane4.0', 'lane4.2', 'lane4.3', 'lane4.4', 'lane5.4', 'lane5.3', 'lane5.2', 'lane5.0', 'lane5.1', 'lane4.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane-1.kml', [
-                    'lane-1.1', 'lane-1.0', 'lane-1.2', 'lane-1.3', 'lane-1.4', 'lane-2.4', 'lane-2.3', 'lane-2.2', 'lane-2.0', 'lane-2.1', 'lane-1.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane-2.kml', [
-                    'lane-2.1', 'lane-2.0', 'lane-2.2', 'lane-2.3', 'lane-2.4', 'lane-3.4', 'lane-3.3', 'lane-3.2', 'lane-3.0', 'lane-3.1', 'lane-2.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane-3.kml', [
-                    'lane-3.1', 'lane-3.0', 'lane-3.2', 'lane-3.3', 'lane-3.4', 'lane-4.5', 'lane-4.4', 'lane-4.3','lane-4.9','lane-4.0' ,'lane-4.2' , 'lane-4.1', 'lane-3.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane-4.kml', [
-                    'lane-4.1','lane-4.9', 'lane-4.0', 'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-5.0', 'lane-5.9','lane-5.1', 'lane-4.1'
-                ]),
-                ('./scenario_mining/exiD_scenario_mining/playground78-92_lane-4_OnRamp.kml', [
-                    'lane-4.2', 'lane-4.3', 'lane-4.4', 'lane-5.4', 'lane-5.3', 'lane-5.2', 'lane-4.2'
-                ])
-            ]
-
-            labels_78_92 = [
-                'lane 1', 'lane 2', 'lane 3', 'lane 4', 'lane -1', 'lane -2', 'lane -3', 'lane -4', 'lane -4 OnRamp'
-            ]
-
-            colors_78_92 = [
-                'red', 'blue', 'green', 'purple', 'orange', 'cyan', 'magenta', 'yellow', 'grey'
-            ]
-
-            playground78_92.create_polygon_and_plot(kml_files_and_names_78_92, labels_78_92, colors_78_92, x_utm_origin_78_92, y_utm_origin_78_92)
-            '''
 
 def get_activity_from_LLM_response_ExitD(LLM_response):
     """
@@ -4360,15 +3522,7 @@ def  mainFunctionScenarioIdentification_ExitD(tracks_36, key_label, latActDict, 
             # Judge the ego vehicle lateral activity
             if req_ego_latAct not in curr_ego_latActs['LateralActivity'].values:
                 continue
-            '''
-            if req_ego_latAct == 'on-ramp':
-                #这里需要写一个函数，需要连续找到'on-ramp'和'lane change left',在完成'lane change left'完成的下一帧，跟find_start_end_frame_of_latAct函数
-                #中的endFrame = curr_latActs.iloc[index+1]['frame']一样，找到这里的[区间的egoLatActFra]。这里还有一个问题就是还没有给完成lane change left
-                #后的第一帧打上follow lane，明天记得打上。
-            else:
-            '''
             egoLatActFram = find_start_end_frame_of_latAct(curr_ego_latActs, req_ego_latAct)
-            #egoLatActFram = find_start_end_frame_of_latAct(curr_ego_latActs, req_ego_latAct)
 
             # Check the ego vehicle ramp activity
             '''
@@ -4405,8 +3559,28 @@ def  mainFunctionScenarioIdentification_ExitD(tracks_36, key_label, latActDict, 
                 curr_tgt_start_row = tracks_36[(tracks_36['trackId'] == curr_interact_tgt) & (tracks_36['frame'] == inter[0])].reset_index(drop=True)
                 curr_tgt_end_row = tracks_36[(tracks_36['trackId'] == curr_interact_tgt) & (tracks_36['frame'] == inter[1])].reset_index(drop=True)
 
-                # lane ID
+                # lane ID 
+
+                 
+                if curr_ego_end_row.empty or curr_ego_start_row.empty or curr_tgt_start_row.empty or curr_tgt_end_row.empty:
+                    continue
+                
+                # Check all rows if the 'laneId' column is empty
+                if 'laneId' not in curr_ego_end_row or 'laneId' not in curr_ego_start_row or 'laneId' not in curr_tgt_start_row or 'laneId' not in curr_tgt_end_row:
+                    continue
+
+                if curr_ego_end_row['laneId'].empty or curr_ego_start_row['laneId'].empty or curr_tgt_start_row['laneId'].empty or curr_tgt_end_row['laneId'].empty:
+                    continue
+
+                # Then check if index 0 exists in each Series
+                if 0 not in curr_ego_end_row['laneId'].index or 0 not in curr_ego_start_row['laneId'].index or 0 not in curr_tgt_start_row['laneId'].index or 0 not in curr_tgt_end_row['laneId'].index:
+                    continue                              
+                if curr_ego_end_row['laneId'][0] ==  'Unknown' or curr_ego_start_row['laneId'][0]==  'Unknown' or curr_tgt_start_row['laneId'][0] ==  'Unknown'or curr_tgt_end_row['laneId'][0]==  'Unknown':
+                    continue
+
+
                 curr_ego_start_lane = curr_ego_start_row['laneId'][0]
+
                 curr_ego_end_lane = curr_ego_end_row['laneId'][0]
                 curr_tgt_start_lane = curr_tgt_start_row['laneId'][0]
                 curr_tgt_end_lane = curr_tgt_end_row['laneId'][0]
@@ -4485,133 +3659,3 @@ def  mainFunctionScenarioIdentification_ExitD(tracks_36, key_label, latActDict, 
 
     return scenarioLists
 
-
-#file_path = '39_tracks.csv'
-#select_playground(file_path)
-
-'''
-response = """
-{
-    'Ego Vehicle': 
-    {
-        'Ego ramp activity': ['KeepRamp']
-    },
-    'Target Vehicle #1': 
-    {
-        'Target ramp activity': ['OnRamp']
-    }
-}
-"""
-
-response = """
-{
-    'Ego Vehicle': 
-    {
-        'Ego ramp activity': ['OffRamp']
-    },
-    'Target Vehicle #1': 
-    {
-        'Target ramp activity': ['KeepRamp']
-    }
-}
-"""
-# Ego vehicle was trying to off-ramp; However, the target vehicle driving parallelly.
-
-response = """
-{'Ego Vehicle': {'Ego longitudinal activity': ['deceleration'], 
-    'Ego lateral activity': ['off-ramp']}, 
-    'Target Vehicle #1': {'Target start position': {'adjacent lane': ['right adjacent lane']}, 
-    'Target end position': {'rear': ['right rear']}, 
-    'Target behavior': {'target longitudinal activity': ['deceleration'], 
-    'target lateral activity': ['follow lane']}}}
-    """
-'''
-# Ego vehicle was trying to on-ramp; The ego vehicle has to watch out the vehicles driving on the highway
-response =""" {'Ego Vehicle': {'Ego longitudinal activity': ['acceleration'], 
-    'Ego lateral activity': ['on-ramp']}, 
-    'Target Vehicle #1': {'Target start position': {'rear': ['left rear']}, 
-    'Target end position': {'same lane': ['behind']}, 
-    'Target behavior': {'target longitudinal activity': ['acceleration'], 
-    'target lateral activity': ['follow lane']}}}"""
-# for cut in
-
-response =""" {'Ego Vehicle': {'Ego longitudinal activity': ['acceleration'], 
-
-  'Ego lateral activity': ['on-ramp']}, 
-
-  'Target Vehicle #1': {'Target start position': {'same lane': ['behind']}, 
-
-  'Target end position': {'same lane': ['behind']}, 
-
-  'Target behavior': {'target longitudinal activity': ['acceleration'], 
-
-  'target lateral activity': ['on-ramp']}}}"""
-
-'''
-response = """
-{
-    'Ego Vehicle': 
-    {
-        'Ego longitudinal activity': ['keep velocity'],
-        'Ego lateral activity': ['follow lane'],
-        'Ego ramp activity': ['KeepRamp']
-    },
-    'Target Vehicle #1': 
-    {
-        'Target start position': {'adjacent lane': ['left adjacent lane']},
-        'Target end position': {'same lane': ['front']},
-        'Target behavior': {'target longitudinal activity': ['acceleration'], 'target lateral activity': ['lane change right'], 'target ramp activity': ['KeepRamp']}
-    }
-}
-"""
-
-# for cut out
-response = """
-{
-    'Ego Vehicle': 
-    {
-        'Ego longitudinal activity': ['keep velocity'],
-        'Ego lateral activity': ['follow lane'],
-        'Ego ramp activity': ['KeepRamp']
-    },
-    'Target Vehicle #1': 
-    {
-        'Target start position': {'same lane': ['front']},
-        'Target end position': {'adjacent lane': ['left adjacent lane']},
-        'Target behavior': {'target longitudinal activity': ['acceleration'], 'target lateral activity': ['lane change left'], 'target ramp activity': ['KeepRamp']}
-    }
-}
-"""
-
-# for following
-response = """
-{
-    'Ego Vehicle': 
-    {
-        'Ego longitudinal activity': ['keep velocity'],
-        'Ego lateral activity': ['follow lane'],
-        'Ego ramp activity': ['KeepRamp']
-    },
-    'Target Vehicle #1': 
-    {
-        'Target start position': {'same lane': ['front']},
-        'Target end position': {'same lane': ['front']},
-        'Target behavior': {'target longitudinal activity': ['keep velocity'], 'target lateral activity': ['follow lane'], 'target ramp activity': ['KeepRamp']}
-    }
-}
-"""
-'''
-
-
-
-dataset_option = "exitD"
-dataset_load = './39_updated_tracks.csv'
-key_label = extract_json_from_response(response)
-print('Response of the LLM:')
-print(key_label)
-tracks_original = pd.read_csv(dataset_load)    
-progress_bar = st.progress(0)
-longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar,dataset_option)
-#print(longActDict, latActDict, interactIdDict)
-scenarioList = mainFunctionScenarioIdentification_ExitD(tracks_original, key_label, latActDict, longActDict, interactIdDict, progress_bar)
-print(scenarioList)                        

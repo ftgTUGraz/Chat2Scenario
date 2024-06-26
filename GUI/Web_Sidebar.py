@@ -42,7 +42,6 @@ def sidebar():
         # 2. Upload Dataset
         dataset_load = st.sidebar.file_uploader(":file_folder: Upload dataset", type=["csv"])
 
-
         # 3. Criticality metric selection
         # suboption = st.radio(":traffic_light: Select criticality metric", ['ttc', 'thw', 'dhw', 'Self-define'])
         # Define your main options

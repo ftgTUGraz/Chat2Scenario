@@ -63,7 +63,7 @@ conda activate chat2scenario
 	streamlit run .\Chat2Scenario-Web.py
 	```
 	- The Chat2Scenario web application will appear
-![chat2scenario web](docs/Chat2Scenario_Web.png)
+	![chat2scenario web](docs/Chat2Scenario_Web.png)
 - Set Up Everything
 	- Select "highD" dataset option (currently, only highD is compitable).
 	- Upload the corresponding dataset (only the xx_tracks.csv file should be uploaded).

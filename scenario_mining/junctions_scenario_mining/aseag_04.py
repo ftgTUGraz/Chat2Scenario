@@ -590,8 +590,8 @@ class AseagProcessor:
         ----------
         DataFrame: Updated pandas DataFrame with new column 'road_lane' indicating the lane info.
         """
-        tracks_meta_df = pd.read_csv(csv_path)
-
+        #tracks_meta_df = pd.read_csv(csv_path)
+        tracks_meta_df = csv_path
         file_path = 'aseag_04.pkl'
         self.road_lane_paths = self.load_road_lane_paths_pickle(file_path)
 

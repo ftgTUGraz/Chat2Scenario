@@ -403,7 +403,7 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
                             'xCenter': copied_veh_data['xCenter'].values[laneChangeBegIndex],
                             'yCenter': copied_veh_data['yCenter'].values[laneChangeBegIndex]
                         })
-
+                        '''
                         # Check if there are different activities between current frame and laneChangeEndFrame
                         different_activity_exists = False
                         for j in range(i + 1, len(unique_activities)):
@@ -425,7 +425,18 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
                             i = j  # Update the index to the checked position
                         else:
                             unique_activities[i] = unique_activities[laneChangeEndIndex]
-
+                        '''
+                        latActRes.append({
+                                'frame': laneChangeEndFrame,
+                                'trackId': copied_veh_data['trackId'].values[laneChangeEndIndex],
+                                'LateralActivity': unique_activities[laneChangeEndIndex],
+                                'laneId': copied_veh_data['laneId'].values[laneChangeEndIndex],
+                                'xCenter': copied_veh_data['xCenter'].values[laneChangeEndIndex],
+                                'yCenter': copied_veh_data['yCenter'].values[laneChangeEndIndex]
+                            })
+                        #i = j  # Update the index to the checked position
+                        unique_activities[i] = unique_activities[laneChangeEndIndex]
+                        
                     elif unique_activities[i] == 'on-ramp':
                         laneChangeBegFrame = copied_veh_data['frame'].values[i]
                         for j in range(i, len(unique_activities)):
@@ -444,6 +455,7 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
                             'yCenter': copied_veh_data['yCenter'].values[i]
                         })
                         '''
+                        '''
                         latActRes.append({
                             'frame': laneChangeEndFrame,
                             'trackId': copied_veh_data['trackId'].values[i],
@@ -452,6 +464,46 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
                             'xCenter': copied_veh_data['xCenter'].values[i],
                             'yCenter': copied_veh_data['yCenter'].values[i]
                         })
+                        i = j  # Skip to the end of the 'on-ramp' sequence
+                        '''
+                        # Check if there's 'lane change left' within this range
+                        lane_change_left_exists = any((copied_veh_data['frame'].values[k] >= copied_veh_data['frame'].values[j - 1] and 
+                                                       copied_veh_data['frame'].values[k] <= laneChangeEndFrame and 
+                                                       unique_activities[k] == 'lane change left') 
+                                                      for k in range(j - 1, len(unique_activities)))
+
+                        if lane_change_left_exists:
+                            '''
+                            laneChangeBegFrame, laneChangeEndFrame = lateral_activtity_frame_calc(copied_veh_data, refYPosLaneMean, copied_veh_data['frame'].values[i], dataset_option)
+                            laneChangeBegIndex = laneChangeBegFrame - copied_veh_data['frame'].values[0]
+                            laneChangeEndIndex = laneChangeEndFrame - copied_veh_data['frame'].values[0]
+                            latActRes.append({
+                                'frame': laneChangeBegFrame,
+                                'trackId': copied_veh_data['trackId'].values[laneChangeBegIndex],
+                                'LateralActivity': unique_activities[i],
+                                'laneId': copied_veh_data['laneId'].values[laneChangeBegIndex],
+                                'xCenter': copied_veh_data['xCenter'].values[laneChangeBegIndex],
+                                'yCenter': copied_veh_data['yCenter'].values[laneChangeBegIndex]
+                            })
+                            latActRes.append({
+                                'frame': laneChangeEndFrame,
+                                'trackId': copied_veh_data['trackId'].values[laneChangeEndIndex],
+                                'LateralActivity': 'follow lane',
+                                'laneId': copied_veh_data['laneId'].values[laneChangeEndIndex],
+                                'xCenter': copied_veh_data['xCenter'].values[laneChangeEndIndex],
+                                'yCenter': copied_veh_data['yCenter'].values[laneChangeEndIndex]
+                            })
+                            '''
+                            pass
+                        else:
+                            latActRes.append({
+                                'frame': laneChangeEndFrame,
+                                'trackId': copied_veh_data['trackId'].values[i],
+                                'LateralActivity': 'on-ramp',
+                                'laneId': copied_veh_data['laneId'].values[i],
+                                'xCenter': copied_veh_data['xCenter'].values[i],
+                                'yCenter': copied_veh_data['yCenter'].values[i]
+                            })
                         i = j  # Skip to the end of the 'on-ramp' sequence
 
                     elif unique_activities[i] == 'off-ramp':

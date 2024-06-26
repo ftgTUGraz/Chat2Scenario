@@ -31,7 +31,7 @@ from matplotlib.path import Path
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('TkAgg')  # 或 'Qt5Agg', 'GTK3Agg', 'WXAgg' 等，取决于你的系统配置
+matplotlib.use('TkAgg')  # or 'Qt5Agg', 'GTK3Agg', 'WXAgg', etc., depending on your system configuration
 import matplotlib.pyplot as plt
 
 # from API.Call_API import *
@@ -203,35 +203,38 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                         animation_holder = st.empty()
 
                         tracks_original = pd.read_csv(dataset_load) 
-                        
-                        tracks_meta_df = select_opendrive_map(dataset_load)
+
+                        print('\n\n',dataset_load,'\n\n')
+
+                        tracks_meta_df = OpenDriveMapSelector(dataset_load,tracks_original).select_opendrive_map()
 
                         # Search correspondong scenarios from dictionary based on the key labels
                         reminder_holder.warning(':mag: Start search desired scenarios...')
-                        scenarioList = identify_junction_scenarios_optimized(tracks_meta_df, key_label)
+                        scenarioList = OpenDriveMapSelector.identify_junction_scenarios_optimized(tracks_meta_df, key_label)
+                        
                         print("The following scenarios are in the scenario pool:")
                         print(scenarioList)
-                        indexProgress = 0  # 初始化索引进度
-                        total_scenarios = len(scenarioList)  # 获取场景总数
+                        indexProgress = 0  # Initialize the index progress
+                        total_scenarios = len(scenarioList)  # Get the total number of scenes
 
                         for scenario in scenarioList:
-                            # 获取场景详情
+                            # Get scene details
                             ego_id = scenario[0]
                             target_ids = scenario[1]
                             begin_frame = scenario[2]
                             end_frame = scenario[3]
 
-                            # 确保 target_ids 是列表
+                            # Make sure the target ids are lists
                             if isinstance(target_ids, int):
                                 target_ids = [target_ids]
 
-                            # 获取自车数据
+                            # Get egocar data
                             egoVehData = tracks_original[(tracks_original['trackId'] == ego_id) & 
                                                         (tracks_original['frame'] >= begin_frame) & 
                                                         (tracks_original['frame'] <= end_frame)].reset_index(drop=True)
                             fictive_ego_list_sampled.append(egoVehData)
 
-                            # 获取目标车数据
+                            # Get tgtcar data
                             tgtVehsData = []
                             for tgt_id in target_ids:
                                 tgtVehData = tracks_original[(tracks_original['trackId'] == tgt_id) & 
@@ -244,12 +247,12 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                             if scenario not in st.session_state.my_data['desired_scenario']:
                                     st.session_state.my_data['desired_scenario'].append(scenario)
 
-                            # 更新进度条
+                            # Update the progress bar
                             indexProgress += 1
                             progress = int((indexProgress / total_scenarios) * 100)
                             progress_bar.progress(progress)
 
-                        # 完成后将进度条设置到100%
+                        # Set the progress bar to 100% when finished
                         progress_bar.progress(100)                        
 
                     
@@ -280,10 +283,10 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                             
                             fictive_tgt_dict[egoId] = tgtVehsData
                         anmation_holder = st.empty()
-                        preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option)
+                        preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option,dataset_load)
                     elif dataset_option == "inD":
                         reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
-                        preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option)
+                        preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load)
                 else:
                     reminder_holder.warning("No scenarios are selected from the pool. Try to reset the criticality metric/value.")
                 

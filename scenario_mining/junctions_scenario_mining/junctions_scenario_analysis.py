@@ -28,10 +28,10 @@ import matplotlib.pyplot as plt
 import re
 
 class OpenDriveMapSelector:
-    def __init__(self,file_path):
+    def __init__(self,file_path,tracks_original):
         self.file_path = file_path
+        self.tracks_original = tracks_original
         self.tracks_meta_df = self.select_opendrive_map()
-
     def select_opendrive_map(self):
         """
         Selects and processes the OpenDRIVE map file based on its numeric index, updating tracks with lane information and activity types.
@@ -44,26 +44,27 @@ class OpenDriveMapSelector:
         ----------
         DataFrame: A pandas DataFrame that includes updated track information with road and lane details along with activity types.
         """
-        match = re.search(r'\d+', self.file_path)
+        match = re.search(r'\d+', self.file_path.name)
         if match:
             index = int(match.group(0))
             if 0 <= index <= 6:
-                tracks_meta_df = aseag.AseagProcessor().update_tracks_with_lane_info(self.file_path)
+                tracks_meta_df = aseag.AseagProcessor().update_tracks_with_lane_info(self.tracks_original)
                 tracks_meta_df = aseag.AseagProcessor().process_tracks(tracks_meta_df)
                 print(tracks_meta_df)
                 return tracks_meta_df
             elif 7 <= index <= 17:
-                tracks_meta_df = bendplatz.BendplatzProcessor().update_tracks_with_lane_info(self.file_path)
+                print('12\n\n',self.file_path,'\n\n')
+                tracks_meta_df = bendplatz.BendplatzProcessor().update_tracks_with_lane_info(self.tracks_original)
                 tracks_meta_df = bendplatz.BendplatzProcessor().process_tracks(tracks_meta_df)
                 print(tracks_meta_df)
                 return tracks_meta_df
             elif 18 <= index <= 29:
-                tracks_meta_df = frankenburg.FrankenbergProcessor().update_tracks_with_lane_info(self.file_path)
+                tracks_meta_df = frankenburg.FrankenbergProcessor().update_tracks_with_lane_info(self.tracks_original)
                 tracks_meta_df = frankenburg.FrankenbergProcessor().process_tracks(tracks_meta_df)
                 print(tracks_meta_df)
                 return tracks_meta_df
             elif 30 <= index <= 32:
-                tracks_meta_df = heckstrasse.HeckstrasseProcessor().update_tracks_with_lane_info(self.file_path)
+                tracks_meta_df = heckstrasse.HeckstrasseProcessor().update_tracks_with_lane_info(self.tracks_original)
                 tracks_meta_df = heckstrasse.HeckstrasseProcessor().process_tracks(tracks_meta_df)
                 print(tracks_meta_df)
                 return tracks_meta_df
