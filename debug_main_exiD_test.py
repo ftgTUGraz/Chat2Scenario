@@ -36,7 +36,7 @@ from matplotlib.path import Path
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('TkAgg')  # 或 'Qt5Agg', 'GTK3Agg', 'WXAgg' 等，取决于你的系统配置
+matplotlib.use('TkAgg')  # Or 'Qt5Agg', 'GTK3Agg', 'WXAgg', etc., depending on your system configuration
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon
 import shapely.wkt
@@ -47,8 +47,8 @@ import json
 from shapely.geometry import shape, Polygon
 from scenario_mining.exiD_scenario_mining.scenario_identification import *
 
-file_path = '39_tracks.csv'
-select_playground(file_path)
+#file_path = '39_tracks.csv'
+#select_playground(file_path)
 
 '''
 response = """

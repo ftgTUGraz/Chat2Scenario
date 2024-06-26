@@ -371,7 +371,8 @@ class BendplatzProcessor:
         DataFrame: Updated DataFrame with road and lane information.
         """
         # Read the CSV file
-        tracks_meta_df = pd.read_csv(csv_path)
+        #print('12\n\n',csv_path,'\n\n')
+        tracks_meta_df = csv_path
 
         # Process the OpenDRIVE file to get road and lane path data
 

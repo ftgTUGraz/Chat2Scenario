@@ -342,8 +342,8 @@ class HeckstrasseProcessor:
         ----------
         DataFrame: Updated pandas DataFrame with road lane information for each track.
         """
-        tracks_meta_df = pd.read_csv(csv_path)
-
+        #tracks_meta_df = pd.read_csv(csv_path)
+        tracks_meta_df = csv_path
         file_path = 'heckstrasse_03.pkl'
         self.road_lane_paths = self.load_road_lane_paths_pickle(file_path)
 

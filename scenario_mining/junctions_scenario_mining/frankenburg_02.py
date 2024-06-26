@@ -361,8 +361,8 @@ class FrankenbergProcessor:
         ----------
         DataFrame: The updated DataFrame with an additional 'road_lane' column.
         """
-        tracks_meta_df = pd.read_csv(csv_path)
-
+        #tracks_meta_df = pd.read_csv(csv_path)
+        tracks_meta_df = csv_path
         file_path = 'frankenburg_02.pkl'
         self.road_lane_paths = self.load_road_lane_paths_pickle(file_path)
 
