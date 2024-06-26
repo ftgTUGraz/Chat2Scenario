@@ -31,9 +31,19 @@ classification_framework = {
     }
 }
 
+classification_framework_inD = {
+    "ego": 
+    {
+        "turn_type": ["left", "right", "straight"]
+    },
+    "target": 
+    {
+        "turn_type": ["left", "right", "straight"]
+    }
+}
 
 ### Openai LLM to process human language of scenario description
-def LLM_process_scenario_description(openai_key, scenario_description, classification_framework,dataset_option):
+def LLM_process_scenario_description(openai_key, scenario_description, classification_framework,dataset_option, classification_framework_inD):
     """
     Use the LLM to understand the scenario description and assign to the classification framework
 
@@ -92,10 +102,10 @@ def LLM_process_scenario_description(openai_key, scenario_description, classific
     
     elif dataset_option == "inD": 
         # Prompt design for inD dataset
-        prompt = f"System, you are an AI trained to understand and classify urban driving scenarios based on specific frameworks. Your task is to analyze the following urban driving scenario and classify the behavior of both the ego vehicle and the target vehicle according to the given classification framework. Please follow the framework strictly and provide precise and clear classifications. The framework is as follows:\n\n{json.dumps(classification_framework, indent=4)}\n\n"\
+        prompt = f"System, you are an AI trained to understand and classify urban driving scenarios based on specific frameworks. Your task is to analyze the following urban driving scenario and classify the behavior of both the ego vehicle and the target vehicle according to the given classification framework. Please follow the framework strictly and provide precise and clear classifications. The framework is as follows:\n\n{json.dumps(classification_framework_inD, indent=4)}\n\n"\
             "Scenario Description: \n"\
             f"'{scenario_description}'\n\n"\
-            "Provide a detailed classification for both the ego vehicle and the target vehicle(s). The response should be formatted as follows:\n"\
+            "Provide a detailed classification for both the ego vehicle and the target vehicle(s). The response should be formatted exactly as shown in this structure:\n"\
             "{\n"\
             "    'Ego Vehicle': \n"\
             "    {\n"\
@@ -225,14 +235,13 @@ def get_scenario_classification_via_LLM(openai_key, scenario_description, progre
     """
     # Get response from LLM
     progress_bar.progress(25)
-    response = LLM_process_scenario_description(openai_key, scenario_description, classification_framework,dataset_option)
+    response = LLM_process_scenario_description(openai_key, scenario_description, classification_framework,dataset_option,classification_framework_inD)
     progress_bar.progress(100)
-    if response is not None:
-        # Extract key labels
-        key_label = extract_json_from_response(response)
-        return key_label
-    else:
-        return None
+    print('\n\n',response,'\n\n')
+    # Extract key labels
+    key_label = extract_json_from_response(response)
+
+    return key_label
 
 
 def validate_scenario(sample, reminder_holder):
