@@ -9,7 +9,6 @@ import scenario_mining.exiD_scenario_mining.playground61_72 as playground61_72
 import scenario_mining.exiD_scenario_mining.playground73_77 as playground73_77
 import scenario_mining.exiD_scenario_mining.playground78_92 as playground78_92
 import scenario_mining.exiD_scenario_mining.scenario_identification as scenario_identification
-from scenario_mining.exiD_scenario_mining.scenario_identification import select_playground
 from NLP.Scenario_Description_Understand import *
 import streamlit as st
 import pandas as pd
@@ -45,7 +44,10 @@ from scenario_mining.exiD_scenario_mining.scenario_identification import *
 
 
 file_path = '78_tracks.csv'
-json_data,updated_tracks_df = select_playground(file_path)
+
+scenario_identification = ScenarioIdentification()
+
+json_data,updated_tracks_df =  scenario_identification.select_playground(file_path)
 
 def get_json() :
     return json_data

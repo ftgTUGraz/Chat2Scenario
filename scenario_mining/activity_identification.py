@@ -110,12 +110,23 @@ def longitudinal_activity_calc(vehicle_data,dataset_option):
             return 'deceleration'
         else:
             return 'keep velocity'
+        
+    def categorize_maneuver_exiD(row):
+        if row['xAcceleration'] * np.cos(np.radians(row['heading']) > accel_rate_threshold ):
+            return 'acceleration'
+        elif row['xAcceleration']* np.cos(np.radians(row['heading']) < -accel_rate_threshold ):
+            return 'deceleration'
+        else:
+            return 'keep velocity'
 
     # Apply the function to the DataFrame
     vehicle_data_copy = vehicle_data.copy()
     vehicle_data_copy['LongitudinalActivity'] = vehicle_data_copy.apply(categorize_maneuver, axis=1)
     vehicle_data_merge = vehicle_data_copy[vehicle_data_copy['LongitudinalActivity'] != vehicle_data_copy['LongitudinalActivity'].shift()]
     if dataset_option == "highD":
+        vehicle_data_copy = vehicle_data.copy()
+        vehicle_data_copy['LongitudinalActivity'] = vehicle_data_copy.apply(categorize_maneuver, axis=1)
+        vehicle_data_merge = vehicle_data_copy[vehicle_data_copy['LongitudinalActivity'] != vehicle_data_copy['LongitudinalActivity'].shift()]
         longActRes_merge = vehicle_data_merge[['frame', 'id', 'LongitudinalActivity', 'laneId', 'x', 'y']]
         end_row = {'frame': vehicle_data_copy['frame'].values[-1],
                 'id': vehicle_data_copy['id'].values[-1],
@@ -124,6 +135,10 @@ def longitudinal_activity_calc(vehicle_data,dataset_option):
                 'x': vehicle_data_copy['x'].values[-1],
                 'y': vehicle_data_copy['y'].values[-1]}
     elif dataset_option == "exitD":
+        
+        vehicle_data_copy = vehicle_data.copy()
+        vehicle_data_copy['LongitudinalActivity'] = vehicle_data_copy.apply(categorize_maneuver_exiD, axis=1)
+        vehicle_data_merge = vehicle_data_copy[vehicle_data_copy['LongitudinalActivity'] != vehicle_data_copy['LongitudinalActivity'].shift()]
         longActRes_merge = vehicle_data_merge[['frame', 'trackId', 'LongitudinalActivity', 'laneId', 'xCenter', 'yCenter']]
         end_row = {'frame': vehicle_data_copy['frame'].values[-1],
                 'trackId': vehicle_data_copy['trackId'].values[-1],
@@ -231,10 +246,10 @@ def lateral_activtity_frame_calc(copied_veh_data, refYPosLaneMean, laneChangeFra
     elif dataset_option == "exitD":
         lane_width_before = copied_veh_data[copied_veh_data['frame'] == (n - 1)]['laneWidth'].values[0]
         lane_width_after = copied_veh_data[copied_veh_data['frame'] == n]['laneWidth'].values[0]
-        # 将分号分隔的字符串转换为浮点数列表并计算平均值
+        # Converts a semicolon-separated string to a list of floating-point numbers and calculates the average
         def compute_average_width(lane_width_str):
             if isinstance(lane_width_str, (float, np.float64)):
-                # 如果是单一浮点数，直接返回它
+                # If it is a single floating-point number, return it directly
                 return lane_width_str
             widths = [float(width) for width in lane_width_str.split(';')]
             return np.mean(widths)
@@ -243,7 +258,7 @@ def lateral_activtity_frame_calc(copied_veh_data, refYPosLaneMean, laneChangeFra
         lane_width_after = compute_average_width(lane_width_after)
         lane_width = (lane_width_before + lane_width_after) / 2
         
-        # 计算最小换道时间
+        # Calculate minimum lane change time
         min_lane_change_time = np.sqrt(2.535 * lane_width)
         
         frame_rate = 25
@@ -253,7 +268,7 @@ def lateral_activtity_frame_calc(copied_veh_data, refYPosLaneMean, laneChangeFra
         closest_frame_before_n = n - (min_lane_change_frames // 2)
         closest_frame_after_n = n + (min_lane_change_frames // 2)
         
-        # 确保帧号在合理范围内
+        # Make sure the frame number is within reasonable limits
         closest_frame_before_n = max(closest_frame_before_n, copied_veh_data['frame'].values[0])
         closest_frame_after_n = min(closest_frame_after_n, copied_veh_data['frame'].values[-1])   
                 
@@ -323,7 +338,7 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option,file_pat
         
         return series_filled
 
-    # 使用自定义方法填充 NaN 值
+    # Fill NaN values with custom methods
     copied_veh_data['laneId'] = fill_nan_custom(copied_veh_data['laneId'])
 
     copied_veh_data['laneChange'] = copied_veh_data['laneId'].diff()
@@ -341,7 +356,7 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option,file_pat
         match = re.search(r'\d+', file_path)
         if match:
             index = int(match.group(0))
-            if 39 <= index <= 52 :
+            if 39 <= index <= 52:
                 veh_drive_direction = copied_veh_data['xCenter'].iloc[-1] - copied_veh_data['xCenter'].iloc[0]
             else :
                 veh_drive_direction = - (copied_veh_data['xCenter'].iloc[-1] - copied_veh_data['xCenter'].iloc[0])
@@ -490,11 +505,11 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option,file_pat
                             })
                         '''
                         if Begin_LateralActivity != 'on-ramp':
-                            # 删除 latActRes 最近一个加入的元素
+                            # Delete the most recently added element of latActRes
                             if latActRes:
                                 latActRes.pop()
                             
-                            # 添加新的元素到 latActRes 列表中
+                            # Add a new element to the latActRes list
                             latActRes.append({
                                 'frame': copied_veh_data['frame'].values[0],
                                 'trackId': copied_veh_data['trackId'].values[0],
@@ -515,7 +530,7 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option,file_pat
                         '''
                         for j in range(i, len(unique_activities)):
                             if unique_activities[j] != 'on-ramp':
-                                # 检查后续是否还有 'on-ramp' 活动
+                                # Check if there are 'on-ramp' activities in the follow-up
                                 on_ramp_found = False
                                 for k in range(j, len(unique_activities)):
                                     if unique_activities[k] == 'on-ramp':
