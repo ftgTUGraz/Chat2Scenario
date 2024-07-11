@@ -31,17 +31,20 @@ from matplotlib.path import Path
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.use('TkAgg')  # or 'Qt5Agg', 'GTK3Agg', 'WXAgg', etc., depending on your system configuration
+matplotlib.use('Agg')  # or 'Qt5Agg', 'GTK3Agg', 'WXAgg', etc., depending on your system configuration
 import matplotlib.pyplot as plt
+import scenario_mining.exiD_scenario_mining.scenario_identification as scenario_identification
+from scenario_mining.exiD_scenario_mining.scenario_identification import select_playground
 
 # from API.Call_API import *
 
 # *****************************************************************************************************************************************
 #### Start construct website
 # Set the layout of the page
-st.set_page_config(
-    layout="wide"  # Use "wide" layout to increase the main content area width
-)
+if __name__ == '__main__':
+    st.set_page_config(
+        layout="wide"  # Use "wide" layout to increase the main content area width
+    )
 
 
 ### Sidebar
@@ -79,7 +82,7 @@ st.session_state.my_data['framerate'] = frame_rate
 st.markdown("<h1 style='text-align: center; font-weight:bold; font-family:comic sans ms; padding-top: 0rem;'>Chat2Scenario</h1>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; padding-top: 0rem;'>Scenario extraction from dataset through utilization of large language model</h2>", unsafe_allow_html=True)
 
-if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == "inD":
+if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == "inD" or dataset_option == "exitD":
     ## Check if uploaded data are correct
     csv_format = None
     if dataset_load is not None:
@@ -154,7 +157,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                     st.warning(warning_messages)
                 else:
                     # Check if key_label is valid
-                    check_key_label = validate_scenario(key_label, reminder_holder)
+                    check_key_label = validate_scenario(key_label, reminder_holder, dataset_option)
 
                 if check_key_label:
                     if dataset_option == "highD":
@@ -163,7 +166,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                         st.session_state.my_data['tracks_original'] = tracks_original
                         # Calculate all vehicles' longitudinal and lateral activity
                         reminder_holder.warning(':running: Start analyze the vehicle activity...')
-                        longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar,dataset_option)
+                        longActDict, latActDict, interactIdDict = main_fcn_veh_activity(tracks_original, progress_bar,dataset_option,None)
                     
                     # if key_label != None:
                         # Search correspondong scenarios from dictionary based on the key labels
@@ -253,8 +256,63 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                             progress_bar.progress(progress)
 
                         # Set the progress bar to 100% when finished
-                        progress_bar.progress(100)                        
+                        progress_bar.progress(100)
+                                            
+                    elif dataset_option == "exitD":
+                        
+                        animation_holder = st.empty()
 
+                        #tracks_original = pd.read_csv(dataset_load) 
+                        json_data,updated_tracks_df = select_playground(dataset_load.name)
+                        print('\n\n',dataset_load,'\n\n')
+
+                        longActDict, latActDict, interactIdDict = main_fcn_veh_activity(updated_tracks_df, progress_bar,dataset_option,dataset_load.name)
+                        # Search correspondong scenarios from dictionary based on the key labels
+                        reminder_holder.warning(':mag: Start search desired scenarios...')
+                        scenarioList = scenario_identification.mainFunctionScenarioIdentification_ExitD(updated_tracks_df, key_label, latActDict, longActDict, interactIdDict, progress_bar,dataset_load.name)
+                        
+                        print("The following scenarios are in the scenario pool:")
+                        print(scenarioList)
+                        indexProgress = 0  # Initialize the index progress
+                        total_scenarios = len(scenarioList)  # Get the total number of scenes
+
+                        for scenario in scenarioList:
+                            # Get scene details
+                            ego_id = scenario[0]
+                            target_ids = scenario[1]
+                            begin_frame = scenario[2]
+                            end_frame = scenario[3]
+
+                            # Make sure the target ids are lists
+                            if isinstance(target_ids, int):
+                                target_ids = [target_ids]
+
+                            # Get egocar data
+                            egoVehData = updated_tracks_df[(updated_tracks_df['trackId'] == ego_id) & 
+                                                        (updated_tracks_df['frame'] >= begin_frame) & 
+                                                        (updated_tracks_df['frame'] <= end_frame)].reset_index(drop=True)
+                            fictive_ego_list_sampled.append(egoVehData)
+
+                            # Get tgtcar data
+                            tgtVehsData = []
+                            for tgt_id in target_ids:
+                                tgtVehData = updated_tracks_df[(updated_tracks_df['trackId'] == tgt_id) & 
+                                                            (updated_tracks_df['frame'] >= begin_frame) & 
+                                                            (updated_tracks_df['frame'] <= end_frame)].reset_index(drop=True)
+                                tgtVehsData.append(tgtVehData)
+                            
+                            fictive_target_dicts_sampled[ego_id] = tgtVehsData
+
+                            if scenario not in st.session_state.my_data['desired_scenario']:
+                                    st.session_state.my_data['desired_scenario'].append(scenario)
+
+                            # Update the progress bar
+                            indexProgress += 1
+                            progress = int((indexProgress / total_scenarios) * 100)
+                            progress_bar.progress(progress)
+
+                        # Set the progress bar to 100% when finished
+                        progress_bar.progress(100) 
                     
 
                 # reminder_holder.write(st.session_state.my_data['desired_scenario'])
@@ -283,10 +341,13 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                             
                             fictive_tgt_dict[egoId] = tgtVehsData
                         anmation_holder = st.empty()
-                        preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option,dataset_load)
-                    elif dataset_option == "inD":
+                        preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option,dataset_load,[])
+                    elif dataset_option == "inD" :
                         reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
-                        preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load)
+                        preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load,[]) 
+                    elif dataset_option == "exitD":
+                        reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
+                        preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load,json_data) 
                 else:
                     reminder_holder.warning("No scenarios are selected from the pool. Try to reset the criticality metric/value.")
                 

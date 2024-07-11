@@ -185,7 +185,12 @@ def find_start_end_frame_of_latAct(curr_latActs, req_latAct):
         if row['LateralActivity'] == req_latAct:
             begFrame = row['frame']
             if req_latAct == 'on-ramp':
-                endFrame = curr_latActs.iloc[index+2]['frame']  
+                print(curr_latActs)
+                endFrame = curr_latActs.iloc[index+2]['frame']
+            
+            elif req_latAct == 'off-ramp':
+                endFrame = curr_latActs.iloc[index+1]['frame']
+                print(curr_latActs)   
             else:          
                 endFrame = curr_latActs.iloc[index+1]['frame']
             latActFram.append(begFrame)
@@ -194,6 +199,27 @@ def find_start_end_frame_of_latAct(curr_latActs, req_latAct):
     
     return latActFram
 
+def find_start_end_frame_of_off_ramp(curr_latActs,egoLatAct_endFrame):
+    """
+    找到当前 'off-ramp' 活动的开始和结束帧
+
+    参数:
+    -----------
+    输入:
+        curr_latActs (df): 包含描述活动的列的数据框 
+        [frame, id, LateralActivity, laneId, x, y]
+
+    返回:
+        latActFram (list): 包含两个值的列表，表示开始和结束帧。
+    ----------
+    """
+    latActFram = []
+    if len(curr_latActs) >= 2:
+        begFrame = curr_latActs.iloc[-2]['frame']
+        endFrame = egoLatAct_endFrame
+        latActFram.append(begFrame)
+        latActFram.append(endFrame)
+    return latActFram
 
 def find_start_end_frame_of_lonAct(curr_lonActs, req_lonAct):
     """

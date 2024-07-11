@@ -13,6 +13,7 @@ from scipy.signal import find_peaks
 import time
 import streamlit as st
 from shapely.geometry import Point
+import re
 
 def classify_vehicle_maneuver(velocities, accel_rate_threshold):
     """
@@ -232,6 +233,9 @@ def lateral_activtity_frame_calc(copied_veh_data, refYPosLaneMean, laneChangeFra
         lane_width_after = copied_veh_data[copied_veh_data['frame'] == n]['laneWidth'].values[0]
         # 将分号分隔的字符串转换为浮点数列表并计算平均值
         def compute_average_width(lane_width_str):
+            if isinstance(lane_width_str, (float, np.float64)):
+                # 如果是单一浮点数，直接返回它
+                return lane_width_str
             widths = [float(width) for width in lane_width_str.split(';')]
             return np.mean(widths)
         
@@ -268,7 +272,7 @@ def lateral_activtity_frame_calc(copied_veh_data, refYPosLaneMean, laneChangeFra
         return closest_frame_before_n, closest_frame_after_n
 
 
-def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
+def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option,file_path):
     """
     Calculate vehicle lateral activity [follow lane; lane change to the left; lane change to the right]
 
@@ -299,13 +303,49 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
     """
     # Calculate lane id changes during the whole scenario
     copied_veh_data = vehicle_data.copy()
+
+    def fill_nan_custom(series):
+        series_filled = series.copy()
+        n = len(series_filled)
+        
+        # 用前向填充和后向填充分别生成两个临时列
+        ffill_series = series_filled.fillna(method='ffill')
+        bfill_series = series_filled.fillna(method='bfill')
+        
+        for i in range(n):
+            if pd.isna(series_filled.iloc[i]):
+                # 找到前面的非 NaN 值
+                prev_value = ffill_series.iloc[i]
+                # 找到后面的非 NaN 值
+                next_value = bfill_series.iloc[i]
+                # 用前面的值填充一半，用后面的值填充另一半
+                series_filled.iloc[i] = prev_value if i < n / 2 else next_value
+        
+        return series_filled
+
+    # 使用自定义方法填充 NaN 值
+    copied_veh_data['laneId'] = fill_nan_custom(copied_veh_data['laneId'])
+
     copied_veh_data['laneChange'] = copied_veh_data['laneId'].diff()
 
     # Calculate drive direction
     if dataset_option == "highD":
         veh_drive_direction = copied_veh_data['x'].iloc[-1] - copied_veh_data['x'].iloc[0]
     elif dataset_option == "exitD":
-        veh_drive_direction = copied_veh_data['xCenter'].iloc[-1] - copied_veh_data['xCenter'].iloc[0]
+        #veh_drive_direction = copied_veh_data['xCenter'].iloc[-1] - copied_veh_data['xCenter'].iloc[0]
+
+        #start_x = copied_veh_data['xCenter'].iloc[0] + np.cos(np.radians(copied_veh_data['heading'].iloc[0]))
+        #end_x = copied_veh_data['xCenter'].iloc[-1] + np.cos(np.radians(copied_veh_data['heading'].iloc[-1]))
+        #veh_drive_direction = end_x - start_x
+
+        match = re.search(r'\d+', file_path)
+        if match:
+            index = int(match.group(0))
+            if 39 <= index <= 52 :
+                veh_drive_direction = copied_veh_data['xCenter'].iloc[-1] - copied_veh_data['xCenter'].iloc[0]
+            else :
+                veh_drive_direction = - (copied_veh_data['xCenter'].iloc[-1] - copied_veh_data['xCenter'].iloc[0])
+
     # Calculate lateral activities of vehicles
     def lane_change_calc(row,dataset_option):
         if dataset_option == "exitD":
@@ -387,7 +427,7 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
                 'xCenter': copied_veh_data['xCenter'].values[0],
                 'yCenter': copied_veh_data['yCenter'].values[0]
             })
-
+            Begin_LateralActivity = copied_veh_data['LateralActivity'].values[0]
             i = 1
             while i < len(unique_activities):
                 if unique_activities[i] != unique_activities[i - 1] or (i-1 == 0 and unique_activities[i-1] == 'on-ramp'):
@@ -438,13 +478,55 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
                         unique_activities[i] = unique_activities[laneChangeEndIndex]
                         
                     elif unique_activities[i] == 'on-ramp':
+                        '''
+                        if Begin_LateralActivity != 'on-ramp':
+                            latActRes.append({
+                                'frame': copied_veh_data['frame'].values[i],
+                                'trackId': copied_veh_data['trackId'].values[i],
+                                'LateralActivity': copied_veh_data['LateralActivity'].values[i],
+                                'laneId': copied_veh_data['laneId'].values[i],
+                                'xCenter': copied_veh_data['xCenter'].values[i],
+                                'yCenter': copied_veh_data['yCenter'].values[i]
+                            })
+                        '''
+                        if Begin_LateralActivity != 'on-ramp':
+                            # 删除 latActRes 最近一个加入的元素
+                            if latActRes:
+                                latActRes.pop()
+                            
+                            # 添加新的元素到 latActRes 列表中
+                            latActRes.append({
+                                'frame': copied_veh_data['frame'].values[0],
+                                'trackId': copied_veh_data['trackId'].values[0],
+                                'LateralActivity': 'on-ramp',
+                                'laneId': copied_veh_data['laneId'].values[i],
+                                'xCenter': copied_veh_data['xCenter'].values[0],
+                                'yCenter': copied_veh_data['yCenter'].values[0]
+                            })
+
                         laneChangeBegFrame = copied_veh_data['frame'].values[i]
+                        '''
                         for j in range(i, len(unique_activities)):
                             if unique_activities[j] != 'on-ramp':
                                 laneChangeEndFrame = copied_veh_data['frame'].values[j - 1] + 250
                                 break
                         else:
                             laneChangeEndFrame = copied_veh_data['frame'].values[-1] + 250
+                        '''
+                        for j in range(i, len(unique_activities)):
+                            if unique_activities[j] != 'on-ramp':
+                                # 检查后续是否还有 'on-ramp' 活动
+                                on_ramp_found = False
+                                for k in range(j, len(unique_activities)):
+                                    if unique_activities[k] == 'on-ramp':
+                                        on_ramp_found = True
+                                        break
+                                if not on_ramp_found:
+                                    laneChangeEndFrame = copied_veh_data['frame'].values[j - 1] + 250
+                                    break
+                        else:
+                            laneChangeEndFrame = copied_veh_data['frame'].values[-1] + 250
+
                         '''
                         latActRes.append({
                             'frame': laneChangeBegFrame,
@@ -469,7 +551,7 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
                         # Check if there's 'lane change left' within this range
                         lane_change_left_exists = any((copied_veh_data['frame'].values[k] >= copied_veh_data['frame'].values[j - 1] and 
                                                        copied_veh_data['frame'].values[k] <= laneChangeEndFrame and 
-                                                       unique_activities[k] == 'lane change left') 
+                                                       unique_activities[k] == 'lane change left' or unique_activities[k] == 'off-ramp') 
                                                       for k in range(j - 1, len(unique_activities)))
 
                         if lane_change_left_exists:
@@ -507,14 +589,22 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
                         i = j  # Skip to the end of the 'on-ramp' sequence
 
                     elif unique_activities[i] == 'off-ramp':
-                        laneChangeBegFrame = copied_veh_data['frame'].values[i] - 250
+                        #laneChangeBegFrame = copied_veh_data['frame'].values[i] - 250
+                        laneChangeBegFrame = copied_veh_data['frame'].values[i] 
+                        '''
                         for j in range(i, len(unique_activities)):
                             if unique_activities[j] != 'off-ramp':
                                 laneChangeEndFrame = copied_veh_data['frame'].values[j - 1]
                                 break
                         else:
                             laneChangeEndFrame = copied_veh_data['frame'].values[-1]
-
+                        '''
+                        for j in range(i, len(unique_activities)):
+                            if unique_activities[j] == 'off-ramp':
+                                laneChangeEndFrame = copied_veh_data['frame'].values[j]
+                            else:
+                                break
+                                            
                         latActRes.append({
                             'frame': laneChangeBegFrame,
                             'trackId': copied_veh_data['trackId'].values[i],
@@ -608,7 +698,7 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option):
             return latActRes 
         '''
 
-def main_fcn_veh_activity(tracks, progress_bar,dataset_option):
+def main_fcn_veh_activity(tracks, progress_bar,dataset_option,file_path):
     """
     Main functions to get all desired vehicle activity [keep velocity; acceleration; deceleration]
 
@@ -654,7 +744,7 @@ def main_fcn_veh_activity(tracks, progress_bar,dataset_option):
         longActRes = longitudinal_activity_calc(vehicle_data,dataset_option)
 
         # Lateral activity calculation
-        latActRes = lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option)
+        latActRes = lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option,file_path)
         
         # If meet both lateral and longitudinal activities
         longActDict[vehicle_id] = longActRes

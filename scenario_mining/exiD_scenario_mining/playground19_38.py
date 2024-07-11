@@ -6,6 +6,7 @@ from matplotlib.path import Path
 from matplotlib.patches import PathPatch
 import csv
 from collections import defaultdict
+import pandas as pd
 
 # Define the projection transformation
 in_proj = 'epsg:4326'  # WGS84
@@ -146,3 +147,18 @@ def update_track_data(input_file, output_file, onramp_polygons, offramp_polygons
             writer.writerows(rows)
 
     print(f"Updated tracks have been saved to {output_file}")
+
+def extract_turn_type_and_lane(input_file, onramp_polygons, offramp_polygons, lanes_polygons):
+    # 读取原始数据
+    df = pd.read_csv(input_file)
+
+    # 处理每一行数据
+    for index, row in df.iterrows():
+        x_center = float(row['xCenter'])
+        y_center = float(row['yCenter'])
+        point = Point(x_center, y_center)
+        turn_type, lane_id = determine_turn_type_and_lane(point, onramp_polygons, offramp_polygons, lanes_polygons)
+        df.at[index, 'laneId'] = lane_id
+        df.at[index, 'activity_type'] = turn_type
+
+    return df
