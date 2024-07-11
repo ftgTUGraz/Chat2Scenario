@@ -42,6 +42,31 @@ classification_framework_inD = {
     }
 }
 
+classification_framework_exitD = {
+    "ego": 
+    {
+        "ego longitudinal activity": ["NA", "keep velocity", "acceleration", "deceleration"],
+        "ego lateral activity": ["on-ramp", "off-ramp", "follow lane", "lane change left", "lane change right"]
+    },
+    "target": 
+    {
+        "target position": 
+        {
+            "same lane": ["front", "behind"],
+            "adjacent lane": ["left adjacent lane", "right adjacent lane"],
+            "lane next to adjacent lane": ["lane next to left adjacent lane", "lane next to right adjacent lane"],
+            "rear": ["left rear", "right rear"],
+            "lead": ["left lead", "right lead"]
+        },
+        "target activity": 
+        {
+            "target longitudinal activity": ["NA", "keep velocity", "acceleration", "deceleration"],
+            "target lateral activity": ["follow lane", "lane change left", "lane change right"]
+        }
+    }
+}
+
+
 ### Openai LLM to process human language of scenario description
 def LLM_process_scenario_description(openai_key, scenario_description, classification_framework,dataset_option, classification_framework_inD):
     """
@@ -132,47 +157,45 @@ def LLM_process_scenario_description(openai_key, scenario_description, classific
         
     elif dataset_option == "exitD":
         # Prompt design for exitD dataset
-        prompt = f"System, you are an AI trained to understand and classify highway driving scenarios, including entrance and exit ramps, based on specific frameworks. Your task is to analyze the following driving scenario and classify the behavior of both the ego vehicle and the target vehicle according to the given classification framework. Please follow the framework strictly and provide precise and clear classifications. The framework is as follows:\n\n{json.dumps(classification_framework, indent=4)}\n\n"\
-        "Scenario Description: \n"\
-        f"'{scenario_description}'\n\n"\
-        "Provide a detailed classification for both the ego vehicle and the target vehicle(s). The response should be formatted exactly as shown in this structure:\n"\
-        "{\n"\
-        "    'Ego Vehicle': \n"\
-        "    {\n"\
-        "        'Ego longitudinal activity': ['Your Classification'],\n"\
-        "        'Ego lateral activity': ['Your Classification'],\n"\
-        "        'Ego ramp activity': ['Your Classification']\n"\
-        "    },\n"\
-        "    'Target Vehicle #1': \n"\
-        "    {\n"\
-        "        'Target start position': {'Your Classification': ['Your Classification']},\n"\
-        "        'Target end position': {'Your Classification': ['Your Classification']},\n"\
-        "        'Target behavior': {'target longitudinal activity': ['Your Classification'], 'target lateral activity': ['Your Classification'], 'target ramp activity': ['Your Classification']}\n"\
-        "    }\n"\
-        "    'Target Vehicle #2': \n"\
-        "    {\n"\
-        "        'Target start position': {'Your Classification': ['Your Classification']},\n"\
-        "        'Target end position': {'Your Classification': ['Your Classification']},\n"\
-        "        'Target behavior': {'target longitudinal activity': ['Your Classification'], 'target lateral activity': ['Your Classification'], 'target ramp activity': ['Your Classification']}\n"\
-        "    }\n"\
-        "}\n"\
-        "Example:\n"\
-        "If an ego vehicle is maintaining speed and following its lane on a highway, then taking the OffRamp, while another vehicle is initially in the left adjacent lane and is accelerating, then changing lanes to the right; finally driving in front of the ego vehicle and also taking the OffRamp, the classification would be:\n"\
-        "{\n"\
-        "    'Ego Vehicle': \n"\
-        "    {\n"\
-        "        'Ego longitudinal activity': ['keep velocity'],\n"\
-        "        'Ego lateral activity': ['follow lane'],\n"\
-        "        'Ego ramp activity': ['OffRamp']\n"\
-        "    },\n"\
-        "    'Target Vehicle': \n"\
-        "    {\n"\
-        "        'Target start position': {'adjacent lane': ['left adjacent lane']},\n"\
-        "        'Target end position': {'same lane': ['front']},\n"\
-        "        'Target behavior': {'target longitudinal activity': ['acceleration'], 'target lateral activity': ['lane change right'], 'target ramp activity': ['OffRamp']}\n"\
-        "    }\n"\
-        "}\n\n"\
-        "Remember to analyze carefully and provide the classification as per the structure given above."
+        prompt = f"System, you are an AI trained to understand and classify highway exit and entrance driving scenarios based on specific frameworks. Your task is to analyze the following driving scenario and classify the behavior of both the ego vehicle and the target vehicle(s) according to the given classification framework. Please follow the framework strictly and provide precise and clear classifications. The framework is as follows:\n\n{json.dumps(classification_framework_exitD, indent=4)}\n\n"\
+            "Scenario Description: \n"\
+            f"'{scenario_description}'\n\n"\
+            "Provide a detailed classification for both the ego vehicle and the target vehicle(s). The response should be formatted exactly as shown in this structure:\n"\
+            "{\n"\
+            "    'Ego Vehicle': \n"\
+            "    {\n"\
+            "        'Ego longitudinal activity': ['Your Classification'],\n"\
+            "        'Ego lateral activity': ['Your Classification']\n"\
+            "    },\n"\
+            "    'Target Vehicle #1': \n"\
+            "    {\n"\
+            "        'Target start position': {'Your Classification': ['Your Classification']},\n"\
+            "        'Target end position': {'Your Classification': ['Your Classification']},\n"\
+            "        'Target behavior': {'target longitudinal activity': ['Your Classification'], 'target lateral activity': ['Your Classification']}\n"\
+            "    }\n"\
+            "    'Target Vehicle #2': \n"\
+            "    {\n"\
+            "        'Target start position': {'Your Classification': ['Your Classification']},\n"\
+            "        'Target end position': {'Your Classification': ['Your Classification']},\n"\
+            "        'Target behavior': {'target longitudinal activity': ['Your Classification'], 'target lateral activity': ['Your Classification']}\n"\
+            "    }\n"\
+            "}\n"\
+            "Example:\n"\
+            "If an ego vehicle is entering the highway using an on-ramp, and a target vehicle starts from the left rear position and ends up in the same lane in front of the ego vehicle while following its lane without changing speed, the classification would be:\n"\
+            "{\n"\
+            "    'Ego Vehicle': \n"\
+            "    {\n"\
+            "        'Ego longitudinal activity': ['NA'],\n"\
+            "        'Ego lateral activity': ['on-ramp']\n"\
+            "    },\n"\
+            "    'Target Vehicle #1': \n"\
+            "    {\n"\
+            "        'Target start position': {'rear': ['left rear']},\n"\
+            "        'Target end position': {'same lane': ['front']},\n"\
+            "        'Target behavior': {'target longitudinal activity': ['NA'], 'target lateral activity': ['follow lane']}\n"\
+            "    }\n"\
+            "}\n\n"\
+            "Remember to analyze carefully and provide the classification as per the structure given above."
 
 
     # Assign openai key
@@ -243,8 +266,7 @@ def get_scenario_classification_via_LLM(openai_key, scenario_description, progre
 
     return key_label
 
-
-def validate_scenario(sample, reminder_holder):
+def validate_scenario(sample, reminder_holder, dataset_option):
     """
     Validate the key label extracted from LLM response.
 
@@ -253,160 +275,330 @@ def validate_scenario(sample, reminder_holder):
     Inputs:
         sample (dict): key label extracted from LLM response
         reminder_holder: st.empty()
+        dataset_option (str): option to select the dataset model ('highD', 'inD', 'exitD')
 
     Returns:
         bool: True if key_label is valid, False otherwise
     ----------
     """
-    # Standard model
-    model = {
-        'Ego Vehicle': {
-            'longitudinal activity': ['keep velocity', 'acceleration', 'deceleration'],
-            'lateral activity': ['follow lane', 'lane change left', 'lane change right']
-        },
-        'Target Vehicle': {
-            'position': {
-                'same lane': ['front', 'behind'],
-                'adjacent lane': ['left adjacent lane', 'right adjacent lane'],
-                'lane next to adjacent lane': ['lane next to left adjacent lane', 'lane next to right adjacent lane']
-            },
-            'behavior': {
+    # Select the model based on dataset_option
+    if dataset_option == "highD":
+        model = {
+            'Ego Vehicle': {
                 'longitudinal activity': ['keep velocity', 'acceleration', 'deceleration'],
                 'lateral activity': ['follow lane', 'lane change left', 'lane change right']
+            },
+            'Target Vehicle': {
+                'position': {
+                    'same lane': ['front', 'behind'],
+                    'adjacent lane': ['left adjacent lane', 'right adjacent lane'],
+                    'lane next to adjacent lane': ['lane next to left adjacent lane', 'lane next to right adjacent lane']
+                },
+                'behavior': {
+                    'longitudinal activity': ['keep velocity', 'acceleration', 'deceleration'],
+                    'lateral activity': ['follow lane', 'lane change left', 'lane change right']
+                }
             }
         }
-    }
+    elif dataset_option == "inD":
+        model = {
+            'Ego Vehicle': {
+                'turn_type': ['left', 'right', 'straight']
+            },
+            'Target Vehicle': {
+                'turn_type': ['left', 'right', 'straight']
+            }
+        }
+    elif dataset_option == "exitD":
+        model = {
+            'Ego Vehicle': {
+                'Ego longitudinal activity': ['NA', 'keep velocity', 'acceleration', 'deceleration'],
+                'Ego lateral activity': ['on-ramp', 'off-ramp', 'follow lane', 'lane change left', 'lane change right']
+            },
+            'Target Vehicle': {
+                'Target position': {
+                    'same lane': ['front', 'behind'],
+                    'adjacent lane': ['left adjacent lane', 'right adjacent lane'],
+                    'lane next to adjacent lane': ['lane next to left adjacent lane', 'lane next to right adjacent lane'],
+                    'rear': ['left rear', 'right rear'],
+                    'lead': ['left lead', 'right lead']
+                },
+                'Target behavior': {
+                    'Target longitudinal activity': ['NA', 'keep velocity', 'acceleration', 'deceleration'],
+                    'Target lateral activity': ['follow lane', 'lane change left', 'lane change right']
+                }
+            }
+        }
+    else:
+        reminder_holder.warning(":cry: Invalid dataset option.")
+        return False
 
     # Helper function to check activities
     def check_activities(activities, model_activities):
         if not isinstance(activities, list):
             return False
         return all(activity in model_activities for activity in activities)
-
-    # ------------------------------- Check the ego vehicke --------------------------------
-    # Check Ego Vehicle activities
+    
+    def check_activity(activity, model_activities):
+        print(f"Checking activity: {activity} against model activities: {model_activities}")
+        return activity in model_activities
+    
+    # Check the ego vehicle
     try: 
         ego_activities = sample.get('Ego Vehicle', {})
         if not ego_activities:
-            reminder_holder.warning(":cry: Invalid Ego Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+            reminder_holder.warning(":cry: Invalid Ego Vehicle. Enrich your descriptive text of scenarios.")
             return False
     except AttributeError:
-        reminder_holder.warning(":cry: Invalid Ego Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        reminder_holder.warning(":cry: Invalid Ego Vehicle. Enrich your descriptive text of scenarios.")
         return False
-    
-    # Check Ego longitudinal activities
-    try:
-        ego_lon_act = ego_activities.get('Ego longitudinal activity', [])
-        if not ego_lon_act:
-            reminder_holder.warning(":cry: Invalid Ego longitudinal activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+
+    # ------------------------------- Check the ego vehicle --------------------------------
+    if dataset_option == "highD":
+        
+        # Check Ego longitudinal activities
+        try:
+            ego_lon_act = ego_activities.get('Ego longitudinal activity', [])
+            if not ego_lon_act:
+                reminder_holder.warning(":cry: Invalid Ego longitudinal activities. Enrich your descriptive text of scenarios.")
+                return False
+        except AttributeError:
+            reminder_holder.warning(":cry: Invalid Ego longitudinal activities. Enrich your descriptive text of scenarios.")
             return False
-    except AttributeError:
-        reminder_holder.warning(":cry: Invalid Ego longitudinal activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-        return False
 
-    # Check Ego lateral activities
-    try: 
-        ego_lat_act = ego_activities.get('Ego lateral activity', [])
-        if not ego_lat_act:
-            reminder_holder.warning(":cry: Invalid Ego lateral activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        # Check Ego lateral activities
+        try: 
+            ego_lat_act = ego_activities.get('Ego lateral activity', [])
+            if not ego_lat_act:
+                reminder_holder.warning(":cry: Invalid Ego lateral activities. Enrich your descriptive text of scenarios.")
+                return False
+        except AttributeError:
+            reminder_holder.warning(":cry: Invalid Ego lateral activities. Enrich your descriptive text of scenarios.")
             return False
-    except AttributeError:
-        reminder_holder.warning(":cry: Invalid Ego lateral activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-        return False
 
-    if not (isinstance(ego_lon_act, list) and isinstance(ego_lat_act, list)):
-        reminder_holder.warning(":cry: Invalid Ego Vehicle activities. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-        return False
+        if not (isinstance(ego_lon_act, list) and isinstance(ego_lat_act, list)):
+            reminder_holder.warning(":cry: Invalid Ego Vehicle activities. Enrich your descriptive text of scenarios.")
+            return False
 
-    # Check latereal and longitudinal activity for ego
-    egoLonActCheck = check_activities(ego_lon_act, model['Ego Vehicle']['longitudinal activity'])
-    egoLatActCheck = check_activities(ego_lat_act, model['Ego Vehicle']['lateral activity'])
-    if not egoLonActCheck:
-        reminder_holder.warning(":cry: Invalid longitudinal activities for Ego Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-        return False
-    if not egoLatActCheck:
-        reminder_holder.warning(":cry: Invalid lateral activities for Ego Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-        return False
+        egoLonActCheck = check_activities(ego_lon_act, model['Ego Vehicle']['longitudinal activity'])
+        egoLatActCheck = check_activities(ego_lat_act, model['Ego Vehicle']['lateral activity'])
+        if not egoLonActCheck:
+            reminder_holder.warning(":cry: Invalid longitudinal activities for Ego Vehicle. Enrich your descriptive text of scenarios.")
+            return False
+        if not egoLatActCheck:
+            reminder_holder.warning(":cry: Invalid lateral activities for Ego Vehicle. Enrich your descriptive text of scenarios.")
+            return False
 
+    elif dataset_option == "inD":
+        # Check Ego turn type
+        try:
+            ego_turn_type = ego_activities.get('turn_type', [])
+            if not ego_turn_type:
+                reminder_holder.warning(":cry: Invalid Ego turn type. Enrich your descriptive text of scenarios.")
+                return False
+        except AttributeError:
+            reminder_holder.warning(":cry: Invalid Ego turn type. Enrich your descriptive text of scenarios.")
+            return False
 
-    # --------------------------Check the target vehicle------------------------------
+        if not isinstance(ego_turn_type, str):
+            reminder_holder.warning(":cry: Invalid Ego Vehicle turn type. Enrich your descriptive text of scenarios.")
+            return False
+
+        if not check_activity(ego_turn_type, model['Ego Vehicle']['turn_type']):
+            reminder_holder.warning(":cry: Invalid turn type for Ego Vehicle. Enrich your descriptive text of scenarios.")
+            return False
+
+    elif dataset_option == "exitD":
+        # Check Ego longitudinal activities
+        try:
+            ego_lon_act = ego_activities.get('Ego longitudinal activity', [])
+            if not ego_lon_act:
+                reminder_holder.warning(":cry: Invalid Ego longitudinal activities. Enrich your descriptive text of scenarios.")
+                return False
+        except AttributeError:
+            reminder_holder.warning(":cry: Invalid Ego longitudinal activities. Enrich your descriptive text of scenarios.")
+            return False
+
+        # Check Ego lateral activities
+        try: 
+            ego_lat_act = ego_activities.get('Ego lateral activity', [])
+            if not ego_lat_act:
+                reminder_holder.warning(":cry: Invalid Ego lateral activities. Enrich your descriptive text of scenarios.")
+                return False
+        except AttributeError:
+            reminder_holder.warning(":cry: Invalid Ego lateral activities. Enrich your descriptive text of scenarios.")
+            return False
+
+        if not (isinstance(ego_lon_act, list) and isinstance(ego_lat_act, list)):
+            reminder_holder.warning(":cry: Invalid Ego Vehicle activities. Enrich your descriptive text of scenarios.")
+            return False
+
+        egoLonActCheck = check_activities(ego_lon_act, model['Ego Vehicle']['Ego longitudinal activity'])
+        egoLatActCheck = check_activities(ego_lat_act, model['Ego Vehicle']['Ego lateral activity'])
+        if not egoLonActCheck:
+            reminder_holder.warning(":cry: Invalid longitudinal activities for Ego Vehicle. Enrich your descriptive text of scenarios.")
+            return False
+        if not egoLatActCheck:
+            reminder_holder.warning(":cry: Invalid lateral activities for Ego Vehicle. Enrich your descriptive text of scenarios.")
+            return False
+
+    # -------------------------- Check the target vehicle ------------------------------
     # Check Target Vehicle activities and positions
     tgt_idx = 1
-    # for target_vehicle, details in sample.items():
     for index, (target_vehicle, details) in enumerate(sample.items()):
         if index == 0:
             continue  
-        curr_tgt_veh = "Target Vehicle #" + str(tgt_idx)
+        curr_tgt_veh = "Target Vehicle" 
         if curr_tgt_veh in target_vehicle:
-            # Check Target behavior
-            try:
-                target_behavior = details.get('Target behavior', {})
-                if not target_behavior:
-                    reminder_holder.warning(":cry: Invalid Target behavior. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-                    return False
-            except AttributeError:
-                reminder_holder.warning(":cry: Invalid Target behavior. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-                return False
-            
-            # Check target lon act
-            try:
-                tgt_lon_act = target_behavior.get('target longitudinal activity', [])
-                if not tgt_lon_act:
-                    reminder_holder.warning(":cry: Invalid Target longitudinal activity. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-                    return False
-            except AttributeError:
-                reminder_holder.warning(":cry: Invalid Target longitudinal activity. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-                return False
-
-            # Check the target lat act
-            try:              
-                tgt_lat_act = target_behavior.get('target lateral activity', [])
-                if not tgt_lat_act:
-                    reminder_holder.warning(":cry: Invalid Target lateral activity. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-                    return False
-            except AttributeError:
-                reminder_holder.warning(":cry: Invalid Target lateral activity. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-                return False
-
-            if not (isinstance(tgt_lon_act, list) and isinstance(tgt_lat_act, list)):
-                reminder_holder.warning(f"Target Vehicle activities should be lists for {target_vehicle}.")
-                return False
-
-            tgtLonActCheck = check_activities(tgt_lon_act, model['Target Vehicle']['behavior']['longitudinal activity'])
-            tgtLatActCheck = check_activities(tgt_lat_act, model['Target Vehicle']['behavior']['lateral activity'])
-
-            if not tgtLonActCheck:
-                reminder_holder.warning(f"Invalid longitudinal activities for {target_vehicle}")
-                return False
-
-            if not tgtLatActCheck:
-                reminder_holder.warning(f"Invalid lateral activities for {target_vehicle}")
-                return False
-
-            # Check Target start and end positions
-            for position_key in ['Target start position', 'Target end position']:
-                position = details.get(position_key, {})
-                if not isinstance(position, dict) or not position:
-                    reminder_holder.warning(f"Invalid {position_key} for {target_vehicle}. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-                    # print(f"{position_key} should be a dictionary for {target_vehicle}.")
-                    return False
-
-                for pos_type, pos_value in position.items():
-                    if pos_type in model['Target Vehicle']['position']:
-                        if not check_activities(pos_value, model['Target Vehicle']['position'][pos_type]):
-                            reminder_holder.warning(f"Invalid {position_key} in {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
-                            return False
-                    else:
-                        reminder_holder.warning(f"Invalid position type: {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+            if dataset_option == "highD":    
+                # Check Target behavior
+                try:
+                    target_behavior = details.get('Target behavior', {})
+                    if not target_behavior:
+                        reminder_holder.warning(":cry: Invalid Target behavior. Enrich your descriptive text of scenarios.")
                         return False
+                except AttributeError:
+                    reminder_holder.warning(":cry: Invalid Target behavior. Enrich your descriptive text of scenarios.")
+                    return False
+                
+                # Check target lon act
+                try:
+                    tgt_lon_act = target_behavior.get('target longitudinal activity', [])
+                    if not tgt_lon_act:
+                        reminder_holder.warning(":cry: Invalid Target longitudinal activity. Enrich your descriptive text of scenarios.")
+                        return False
+                except AttributeError:
+                    reminder_holder.warning(":cry: Invalid Target longitudinal activity. Enrich your descriptive text of scenarios.")
+                    return False
+
+                # Check the target lat act
+                try:              
+                    tgt_lat_act = target_behavior.get('target lateral activity', [])
+                    if not tgt_lat_act:
+                        reminder_holder.warning(":cry: Invalid Target lateral activity. Enrich your descriptive text of scenarios.")
+                        return False
+                except AttributeError:
+                    reminder_holder.warning(":cry: Invalid Target lateral activity. Enrich your descriptive text of scenarios.")
+                    return False
+
+                if not (isinstance(tgt_lon_act, list) and isinstance(tgt_lat_act, list)):
+                    reminder_holder.warning(f"Target Vehicle activities should be lists for {target_vehicle}.")
+                    return False
+
+                tgtLonActCheck = check_activities(tgt_lon_act, model['Target Vehicle']['behavior']['longitudinal activity'])
+                tgtLatActCheck = check_activities(tgt_lat_act, model['Target Vehicle']['behavior']['lateral activity'])
+
+                if not tgtLonActCheck:
+                    reminder_holder.warning(f"Invalid longitudinal activities for {target_vehicle}")
+                    return False
+
+                if not tgtLatActCheck:
+                    reminder_holder.warning(f"Invalid lateral activities for {target_vehicle}")
+                    return False
+
+                # Check Target start and end positions
+                for position_key in ['Target start position', 'Target end position']:
+                    position = details.get(position_key, {})
+                    if not isinstance(position, dict) or not position:
+                        reminder_holder.warning(f"Invalid {position_key} for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                        return False
+
+                    for pos_type, pos_value in position.items():
+                        if pos_type in model['Target Vehicle']['position']:
+                            if not check_activities(pos_value, model['Target Vehicle']['position'][pos_type]):
+                                reminder_holder.warning(f"Invalid {position_key} in {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                                return False
+                        else:
+                            reminder_holder.warning(f"Invalid position type: {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                            return False
+        
+            elif dataset_option == "inD":
+                try:
+                    target_turn_type = details.get('turn_type', [])
+                    if not target_turn_type:
+                        reminder_holder.warning(":cry: Invalid Target turn type. Enrich your descriptive text of scenarios.")
+                        return False
+                except AttributeError:
+                    reminder_holder.warning(":cry: Invalid Target turn type. Enrich your descriptive text of scenarios.")
+                    return False
+
+
+                if not isinstance(target_turn_type, str):  
+                    reminder_holder.warning(f"Target Vehicle turn type should be a string for {target_vehicle}.")
+                    return False
+
+                if not check_activity(target_turn_type, model['Target Vehicle']['turn_type']):
+                    reminder_holder.warning(f"Invalid turn type for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                    return False        
+            elif dataset_option == "exitD":
+                # Check Target behavior
+                try:
+                    target_behavior = details.get('Target behavior', {})
+                    if not target_behavior:
+                        reminder_holder.warning(":cry: Invalid Target behavior. Enrich your descriptive text of scenarios.")
+                        return False
+                except AttributeError:
+                    reminder_holder.warning(":cry: Invalid Target behavior. Enrich your descriptive text of scenarios.")
+                    return False
+                
+                # Check target lon act
+                try:
+                    tgt_lon_act = target_behavior.get('target longitudinal activity', [])
+                    if not tgt_lon_act:
+                        reminder_holder.warning(":cry: Invalid Target longitudinal activity. Enrich your descriptive text of scenarios.")
+                        return False
+                except AttributeError:
+                    reminder_holder.warning(":cry: Invalid Target longitudinal activity. Enrich your descriptive text of scenarios.")
+                    return False
+
+                # Check the target lat act
+                try:              
+                    tgt_lat_act = target_behavior.get('target lateral activity', [])
+                    if not tgt_lat_act:
+                        reminder_holder.warning(":cry: Invalid Target lateral activity. Enrich your descriptive text of scenarios.")
+                        return False
+                except AttributeError:
+                    reminder_holder.warning(":cry: Invalid Target lateral activity. Enrich your descriptive text of scenarios.")
+                    return False
+
+                if not (isinstance(tgt_lon_act, list) and isinstance(tgt_lat_act, list)):
+                    reminder_holder.warning(f"Target Vehicle activities should be lists for {target_vehicle}.")
+                    return False
+
+                tgtLonActCheck = check_activities(tgt_lon_act, model['Target Vehicle']['Target behavior']['Target longitudinal activity'])
+                tgtLatActCheck = check_activities(tgt_lat_act, model['Target Vehicle']['Target behavior']['Target lateral activity'])
+
+                if not tgtLonActCheck:
+                    reminder_holder.warning(f"Invalid longitudinal activities for {target_vehicle}")
+                    return False
+
+                if not tgtLatActCheck:
+                    reminder_holder.warning(f"Invalid lateral activities for {target_vehicle}")
+                    return False
+
+                # Check Target start and end positions
+                for position_key in ['Target start position', 'Target end position']:
+                    position = details.get(position_key, {})
+                    if not isinstance(position, dict) or not position:
+                        reminder_holder.warning(f"Invalid {position_key} for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                        return False
+
+                    for pos_type, pos_value in position.items():
+                        if pos_type in model['Target Vehicle']['Target position']:
+                            if not check_activities(pos_value, model['Target Vehicle']['Target position'][pos_type]):
+                                reminder_holder.warning(f"Invalid {position_key} in {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                                return False
+                        else:
+                            reminder_holder.warning(f"Invalid position type: {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                            return False
         else:
-            reminder_holder.warning(":cry: Invalid Target Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+            reminder_holder.warning(":cry: Invalid Target Vehicle. Enrich your descriptive text of scenarios.")
             return False
         
         tgt_idx += 1
 
     if index == 0:
-        reminder_holder.warning(":cry: Invalid Target Vehicle. Enrich your descriptive text of scenarios. Include the lateral and longitudinal activities of both the ego and target vehicles, as well as the start and end positions of the target vehicle.")
+        reminder_holder.warning(":cry: Invalid Target Vehicle. Enrich your descriptive text of scenarios.")
         return False
 
     return True

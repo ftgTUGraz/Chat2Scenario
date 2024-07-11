@@ -30,6 +30,15 @@ import matplotlib.patches as patches
 import numpy as np
 from data import lane_markings_data
 
+import shapely.wkt
+import pickle
+import json
+from shapely.geometry import mapping
+import json
+from shapely.geometry import shape, Polygon
+
+
+
 def extract_xosc_data(dataset_load, output_path, ttc_threshold, metric_option, dataset_option):
     """
     Generate OpenSCENARIO files in website (for esmini, Carla, ...)
@@ -394,7 +403,7 @@ def find_ax_limit(fictive_ego, fictive_targets,dataset_option):
         y_min = min(ego_y_min, fictive_target_y_min)
         y_max = max(ego_y_max, fictive_target_y_max)
 
-    elif dataset_option == "inD":  
+    elif dataset_option == "inD" or dataset_option == "exitD":  
         ego_x_min = min(fictive_ego['xCenter'])
         ego_x_max = max(fictive_ego['xCenter'])
         ego_y_min = min(fictive_ego['yCenter'])
@@ -565,7 +574,7 @@ def plot_vehicle(ax, x, y,width ,length , orientation, color='blue'):
     # Add the polygon to the axis
     ax.add_patch(polygon)
 
-def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, anmation_holder, dataset_option, file_path):
+def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, anmation_holder, dataset_option, file_path,json_data):
     """
     Function to preview scenario (integrated version)
 
@@ -609,6 +618,8 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
         else:
             reminder_holder.warning("No valid index found, or out of range. No operation performed.")
             return 
+    #elif dataset_option == "exitD":
+       # from Chat2Scenario_Web import json_data
 
     #tracks_df = pd.read_csv(file_path)
 
@@ -625,6 +636,9 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
         # plot the playground
         if dataset_option == "inD":
             processor.plot_road_lane_paths(ax, road_lane_paths)
+        elif dataset_option == "exitD":
+            plot_polygons_from_json(json_data, ax)
+
         elif dataset_option == "highD":
             match = re.search(r'\d+', file_path)
             if match:
@@ -656,14 +670,22 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
             ego_orientation = 0
             rect = plt.Rectangle((ego_x - ego_width / 2, ego_y - ego_height / 2), ego_width, ego_height, angle=ego_orientation, color='r', alpha=0.5)
             ax.add_patch(rect)
-        elif dataset_option == "inD": 
+        elif dataset_option == "inD" : 
             ego_width = fictive_ego_common['width'][i]
             ego_length = fictive_ego_common['length'][i]
-            ax.plot(fictive_ego_common['xCenter'][:i], fictive_ego_common['yCenter'][:i], color = 'red', marker='.', label='fictive ego')
+            ax.plot(fictive_ego_common['xCenter'][:i], fictive_ego_common['yCenter'][:i], color = 'red', marker='.',linewidth=0.01, label='fictive ego')
             ego_x = fictive_ego_common['xCenter'][i]
             ego_y = fictive_ego_common['yCenter'][i]
             ego_orientation = fictive_ego_common['heading'][i] 
             plot_vehicle(ax, ego_x, ego_y, ego_width, ego_length, ego_orientation, color='red') 
+        elif dataset_option == "exitD": 
+            ego_width = fictive_ego_common['width'][i]
+            ego_length = fictive_ego_common['length'][i]
+            #ax.plot(fictive_ego_common['xCenter'][:i], fictive_ego_common['yCenter'][:i], color = 'red', marker='.', label='fictive ego')
+            ego_x = fictive_ego_common['xCenter'][i]
+            ego_y = fictive_ego_common['yCenter'][i]
+            ego_orientation = fictive_ego_common['heading'][i] 
+            plot_vehicle(ax, ego_x, ego_y, ego_width, ego_length, ego_orientation, color='red')             
         # fit orientation to dataset
         elif dataset_option == "AD4CHE":
             ego_orientation = fictive_ego_common['orientation'][i]
@@ -685,14 +707,22 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
                 target_orientation = 0
                 rect = plt.Rectangle((target_x - target_width / 2, target_y - target_height / 2), target_width, target_height, angle=target_orientation, color='b', alpha=0.5)
                 ax.add_patch(rect)
-            elif dataset_option == "inD": 
+            elif dataset_option == "inD" : 
                 target_width = target_common['width'][i]
                 target_length = target_common['length'][i]
-                ax.plot(target_common['xCenter'][:i], target_common['yCenter'][:i], color = 'blue', marker='.', label='fictive target')
+                ax.plot(target_common['xCenter'][:i], target_common['yCenter'][:i], color = 'blue', marker='.',linewidth=10, label='fictive target')
                 target_x = target_common['xCenter'][i]
                 target_y = target_common['yCenter'][i]
                 target_orientation = target_common['heading'][i] 
                 plot_vehicle(ax, target_x, target_y, target_width, target_length, target_orientation, color='red') 
+            elif dataset_option == "exitD": 
+                target_width = target_common['width'][i]
+                target_length = target_common['length'][i]
+                #ax.plot(target_common['xCenter'][:i], target_common['yCenter'][:i], color = 'blue', marker='.', label='fictive target')
+                target_x = target_common['xCenter'][i]
+                target_y = target_common['yCenter'][i]
+                target_orientation = target_common['heading'][i] 
+                plot_vehicle(ax, target_x, target_y, target_width, target_length, target_orientation, color='blue') 
             # fit orientation to dataset
             elif dataset_option == "AD4CHE":
                 target_orientation = target_common['orientation'][i]
@@ -730,7 +760,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
         reminder_holder.warning(f'Previewing {index}-th scenario.')
         if dataset_option == "highD":
             fictive_targets = fictive_target_dicts_sampled[fictive_ego['id'][0]]
-        elif dataset_option == "inD":   
+        elif dataset_option == "inD" or dataset_option == "exitD":   
             fictive_targets = fictive_target_dicts_sampled[fictive_ego['trackId'][0]] 
         #for fictive_target in fictive_targets:
         #    tgtId = fictive_target['id'][0]
@@ -1101,6 +1131,12 @@ def check_upload_csv(dataset_load, dataset_option):
     Aachen_Ind_format = ["recordingId", "trackId", "frame", "trackLifetime", "xCenter", "yCenter", "heading",\
                           "width", "length", "xVelocity", "yVelocity", "xAcceleration", "yAcceleration",\
                              "lonVelocity", "latVelocity", "lonAcceleration", "latAcceleration"]
+    
+    Aachen_exitd_format = ["recordingId", "trackId", "frame", "trackLifetime", "xCenter", "yCenter", "heading",\
+                            "width", "length", "xVelocity", "yVelocity", "xAcceleration", "yAcceleration", "lonVelocity",\
+                                  "latVelocity", "lonAcceleration", "latAcceleration", "traveledDistance", "latLaneCenterOffset",\
+                                      "laneWidth", "laneletId", "laneChange", "lonLaneletPos", "laneletLength", "leadDHW", "leadDV",\
+                                          "leadTHW", "leadTTC", "leadId", "rearId", "leftLeadId", "leftRearId", "leftAlongsideId", "rightLeadId", "rightRearId", "rightAlongsideId", "odrRoadId", "odrSectionNo", "odrLaneId"]
 
 
     # try to read csv, warning if error 
@@ -1116,10 +1152,12 @@ def check_upload_csv(dataset_load, dataset_option):
     expected_format = []
     if dataset_option == "AD4CHE":
         expected_format = DJI_format
-    if dataset_option == "highD" or dataset_option == "roundD" or dataset_option == "exitD" or dataset_option == "uniD":
+    if dataset_option == "highD" or dataset_option == "roundD" or dataset_option == "uniD":
         expected_format = Aachen_format
     elif dataset_option == "inD":
         expected_format = Aachen_Ind_format
+    elif dataset_option == "exitD":
+        expected_format = Aachen_exitd_format
     
     # compare current and expected format
     curr_format = column_names
@@ -1136,3 +1174,29 @@ def check_upload_csv(dataset_load, dataset_option):
     # Reset the file pointer to the beginning of the file
     dataset_load.seek(0)
     return True
+
+
+
+def plot_polygons_from_json(json_data, ax):
+    colormap = cm.get_cmap('tab20')
+    unique_indices = sorted(set([item[0] for item in json_data]))
+    color_norm = mcolors.Normalize(vmin=0, vmax=len(unique_indices) - 1)
+    scalar_map = cm.ScalarMappable(norm=color_norm, cmap=colormap)
+
+    for item in json_data:
+        index, polygon_dict = item
+        polygon = shape(polygon_dict)
+        coords = list(polygon.exterior.coords)
+        path_vertices = coords + [coords[0]]
+        codes = [Path.MOVETO] + [Path.LINETO] * (len(coords) - 1) + [Path.CLOSEPOLY]
+        path = Path(path_vertices, codes)
+        color = scalar_map.to_rgba(unique_indices.index(index))
+        patch = PathPatch(path, facecolor=color, edgecolor='black', alpha=0.5, label=f'Polygon {index}')
+        ax.add_patch(patch)
+
+    ax.set_xlabel("X Coordinate")
+    ax.set_ylabel("Y Coordinate")
+    ax.set_title("Visualization of Polygons")
+    ax.legend()
+    ax.grid(True)
+    ax.axis('equal')

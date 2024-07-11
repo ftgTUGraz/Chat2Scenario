@@ -3,6 +3,7 @@ from pyproj import Transformer
 from shapely.geometry import Polygon, Point
 from collections import defaultdict
 import csv
+import pandas as pd
 
 # Define the projection transformation
 in_proj = 'epsg:4326'  # WGS84
@@ -146,3 +147,18 @@ def create_polygon_and_plot(kml_files_and_names, labels, colors, x_utm_origin, y
     ax.grid(True)
     ax.axis('equal')
     plt.show()
+
+def extract_turn_type_and_lane(input_file, onramp_polygons, offramp_polygons, lanes_polygons):
+    # 读取原始数据
+    df = pd.read_csv(input_file)
+
+    # 处理每一行数据
+    for index, row in df.iterrows():
+        x_center = float(row['xCenter'])
+        y_center = float(row['yCenter'])
+        point = Point(x_center, y_center)
+        turn_type, lane_id = determine_turn_type_and_lane(point, onramp_polygons, offramp_polygons, lanes_polygons)
+        df.at[index, 'laneId'] = lane_id
+        df.at[index, 'activity_type'] = turn_type
+
+    return df
