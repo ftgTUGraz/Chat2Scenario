@@ -34,7 +34,7 @@ import matplotlib
 matplotlib.use('Agg')  # or 'Qt5Agg', 'GTK3Agg', 'WXAgg', etc., depending on your system configuration
 import matplotlib.pyplot as plt
 import scenario_mining.exiD_scenario_mining.scenario_identification as scenario_identification
-from scenario_mining.exiD_scenario_mining.scenario_identification import select_playground
+from scenario_mining.exiD_scenario_mining.scenario_identification import *
 
 # from API.Call_API import *
 
@@ -117,10 +117,12 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
             st.write(":x: Metric is not selected:")
         # xosc or txt
         selected_opts = st.selectbox(":bookmark_tabs: Select desired format:", ['xosc', 'txt'])
+        # ASAM OpenSCENARIO VERSION
+        selected_ver = st.selectbox(":new: Select a new option:", ['ASAM OpenSCENARIO V1.2.0', 'ASAM OpenSCENARIO V1.1.0', 'ASAM OpenSCENARIO V1.0.0'])
         # scenario description using naturlistic language from user
         scenario_description = st.text_area(":bulb: Please describe your desired scenarios:", height=15,\
                                             placeholder="To be decided... ...")
-        
+            
         # maps widget        
         clustrmaps_code = """
         <script type='text/javascript' id='clustrmaps' src='//cdn.clustrmaps.com/map_v2.js?cl=ffffff&w=300&t=tt&d=2OAhc8AUN6fRW11jkXBGW2lVsNrS8hLHe-hgW7QoclI&co=aaaaaa&cmo=cb6e6e&cmn=299852'></script>
@@ -261,9 +263,10 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                     elif dataset_option == "exitD":
                         
                         animation_holder = st.empty()
-
+                        scenario_identification = ScenarioIdentification()
                         #tracks_original = pd.read_csv(dataset_load) 
-                        json_data,updated_tracks_df = select_playground(dataset_load.name)
+                        json_data,updated_tracks_df =  scenario_identification.select_playground(dataset_load.name)
+                        #json_data,updated_tracks_df = select_playground(dataset_load.name)
                         print('\n\n',dataset_load,'\n\n')
 
                         longActDict, latActDict, interactIdDict = main_fcn_veh_activity(updated_tracks_df, progress_bar,dataset_option,dataset_load.name)
@@ -356,7 +359,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
 
         # Extract button
         if extract_btn:  
-            extract = check_extract_condition(dataset_load, selected_opts, metric_threshold)
+            extract = check_extract_condition(dataset_load, selected_opts, metric_threshold, selected_ver)
             xosc_files = []
             if extract and csv_format:
                 oriTracksDf = st.session_state.my_data['tracks_original']
@@ -379,38 +382,69 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
 
                     # Get the ego vehicle information
                     egoVehID = desired_scenario[0]
-                    egoVehTraj = oriTracksDf[oriTracksDf['id']==egoVehID].reset_index(drop=True)
+                    if dataset_option == "highD":
+                        egoVehTraj = oriTracksDf[oriTracksDf['id']==egoVehID].reset_index(drop=True)
+                            
+                        # Find intersection of frames with the current target vehicle
+                        common_frames = set(egoVehTraj['frame'])
+                        tgtVehIDs = desired_scenario[1]
+                        tgtVehTraj_common = []
+                        for tgtVehID in tgtVehIDs:
+                            tgtVehTraj = oriTracksDf[oriTracksDf['id'] == tgtVehID].reset_index(drop=True)
+                            common_frames = common_frames.intersection(set(tgtVehTraj['frame']))
+                            
+                        # Now common_frames contains only frames that are common across all target vehicles and the ego vehicle
+                        egoVehTraj_common = egoVehTraj[egoVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
+                        # Ego vehicle trajectory post-processing: 1) add time; 2) move position; 3) flip y 
+                        ego_time = (egoVehTraj_common['frame'] - egoVehTraj_common['frame'].iloc[0])/25
+                        egoVehTraj_common['time'] = ego_time
+                        egoVehTraj_common['x'] = egoVehTraj_common['x'] + 0.5*egoVehTraj_common['width']
+                        egoVehTraj_common['y'] = egoVehTraj_common['y'] + 0.5*egoVehTraj_common['height']
+                        egoVehTraj_common['y'] = -egoVehTraj_common['y']
 
-                    # Find intersection of frames with the current target vehicle
-                    common_frames = set(egoVehTraj['frame'])
-                    tgtVehIDs = desired_scenario[1]
-                    tgtVehTraj_common = []
-                    for tgtVehID in tgtVehIDs:
-                        tgtVehTraj = oriTracksDf[oriTracksDf['id'] == tgtVehID].reset_index(drop=True)
-                        common_frames = common_frames.intersection(set(tgtVehTraj['frame']))
+                        tgtVehTrajs_common = []
+                        # Get common trajectory data for all target vehicles
+                        for tgtVehID in tgtVehIDs:
+                            tgtVehTraj = oriTracksDf[oriTracksDf['id'] == tgtVehID]
+                            tgtVehTraj_common = tgtVehTraj[tgtVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
+                            # Target vehicle trajectory post-processing: 1) ad "time"; 2) move position; 3) flip y value  
+                            tgt_time = (tgtVehTraj_common['frame'] - tgtVehTraj_common['frame'].iloc[0])/25
+                            tgtVehTraj_common['time'] = tgt_time
+                            tgtVehTraj_common['x'] = tgtVehTraj_common['x'] + 0.5*tgtVehTraj_common['width']
+                            tgtVehTraj_common['y'] = tgtVehTraj_common['y'] + 0.5*tgtVehTraj_common['height']
+                            tgtVehTraj_common['y'] = -tgtVehTraj_common['y']
+                            tgtVehTrajs_common.append(tgtVehTraj_common)
+                    elif dataset_option == "exitD":
+                        egoVehTraj = oriTracksDf[oriTracksDf['trackId']==egoVehID].reset_index(drop=True)
+                        # Find intersection of frames with the current target vehicle
+                        common_frames = set(egoVehTraj['frame'])
+                        tgtVehIDs = desired_scenario[1]
+                        tgtVehTraj_common = []
+                        for tgtVehID in tgtVehIDs:
+                            tgtVehTraj = oriTracksDf[oriTracksDf['trackId'] == tgtVehID].reset_index(drop=True)
+                            common_frames = common_frames.intersection(set(tgtVehTraj['frame']))
                         
-                    # Now common_frames contains only frames that are common across all target vehicles and the ego vehicle
-                    egoVehTraj_common = egoVehTraj[egoVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
-                    # Ego vehicle trajectory post-processing: 1) add time; 2) move position; 3) flip y 
-                    ego_time = (egoVehTraj_common['frame'] - egoVehTraj_common['frame'].iloc[0])/25
-                    egoVehTraj_common['time'] = ego_time
-                    egoVehTraj_common['x'] = egoVehTraj_common['x'] + 0.5*egoVehTraj_common['width']
-                    egoVehTraj_common['y'] = egoVehTraj_common['y'] + 0.5*egoVehTraj_common['height']
-                    egoVehTraj_common['y'] = -egoVehTraj_common['y']
+                        # Now common_frames contains only frames that are common across all target vehicles and the ego vehicle
+                        egoVehTraj_common = egoVehTraj[egoVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
+                        # Ego vehicle trajectory post-processing: 1) add time; 2) move position; 3) flip y 
+                        ego_time = (egoVehTraj_common['frame'] - egoVehTraj_common['frame'].iloc[0])/25
+                        egoVehTraj_common['time'] = ego_time
+                        egoVehTraj_common['xCenter'] = egoVehTraj_common['xCenter'] + 0.5*egoVehTraj_common['width']
+                        egoVehTraj_common['yCenter'] = egoVehTraj_common['yCenter'] + 0.5*egoVehTraj_common['height']
+                        egoVehTraj_common['yCenter'] = -egoVehTraj_common['yCenter']
 
-                    tgtVehTrajs_common = []
-                    # Get common trajectory data for all target vehicles
-                    for tgtVehID in tgtVehIDs:
-                        tgtVehTraj = oriTracksDf[oriTracksDf['id'] == tgtVehID]
-                        tgtVehTraj_common = tgtVehTraj[tgtVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
-                        # Target vehicle trajectory post-processing: 1) ad "time"; 2) move position; 3) flip y value  
-                        tgt_time = (tgtVehTraj_common['frame'] - tgtVehTraj_common['frame'].iloc[0])/25
-                        tgtVehTraj_common['time'] = tgt_time
-                        tgtVehTraj_common['x'] = tgtVehTraj_common['x'] + 0.5*tgtVehTraj_common['width']
-                        tgtVehTraj_common['y'] = tgtVehTraj_common['y'] + 0.5*tgtVehTraj_common['height']
-                        tgtVehTraj_common['y'] = -tgtVehTraj_common['y']
-                        tgtVehTrajs_common.append(tgtVehTraj_common)
-                        
+                        tgtVehTrajs_common = []
+                        # Get common trajectory data for all target vehicles
+                        for tgtVehID in tgtVehIDs:
+                            tgtVehTraj = oriTracksDf[oriTracksDf['trackId'] == tgtVehID]
+                            tgtVehTraj_common = tgtVehTraj[tgtVehTraj['frame'].isin(common_frames)].copy().reset_index(drop=True)
+                            # Target vehicle trajectory post-processing: 1) add "time"; 2) move position; 3) flip y value  
+                            tgt_time = (tgtVehTraj_common['frame'] - tgtVehTraj_common['frame'].iloc[0])/25
+                            tgtVehTraj_common['time'] = tgt_time
+                            tgtVehTraj_common['xCenter'] = tgtVehTraj_common['xCenter'] + 0.5*tgtVehTraj_common['width']
+                            tgtVehTraj_common['yCenter'] = tgtVehTraj_common['yCenter'] + 0.5*tgtVehTraj_common['height']
+                            tgtVehTraj_common['yCenter'] = -tgtVehTraj_common['yCenter']
+                            tgtVehTrajs_common.append(tgtVehTraj_common)                        
 
                     # Create input for "xosc_generation" and "IPG_CarMaker_text_generation"
                     sim_time = len(egoVehTraj_common)/25
@@ -418,7 +452,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                     tgt_tracks = tgtVehTrajs_common
                     
                     if selected_opts == "xosc":
-                        pretty_xml_string = xosc_generation(sim_time, ego_track, tgt_tracks)
+                        version_mapping = {'ASAM OpenSCENARIO V1.2.0': 2, 'ASAM OpenSCENARIO V1.1.0': 1, 'ASAM OpenSCENARIO V1.0.0': 0}                        
+                        pretty_xml_string = xosc_generation(sim_time, ego_track, tgt_tracks, version_mapping[selected_ver])
                         xosc_files.append(pretty_xml_string)
                         
                     # if selected_opts == "txt":

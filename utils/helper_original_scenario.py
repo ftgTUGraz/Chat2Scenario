@@ -169,7 +169,7 @@ def add_everything(object_track, entities, cataref, init, act):
     act.add_maneuver_group(manGroup)
 
 
-def xosc_generation(sim_time, ego_track, target_tracks_sampled):
+def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_version):
     """
     create xosc file
 
@@ -177,6 +177,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled):
         sim_time (double): Duration of simulation time.
         ego_track (dataframe): Fictive ego vehicle track
         target_tracks_sampled (list): Fictive target vehicle track
+        osc_minor_version (int): The minor version of OpenSCENARIO to use.
     """
 
     # parameter + catalog + roadnetwork (independent on the number of entities)
@@ -235,7 +236,8 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled):
         entities=entities,
         storyboard=storyboard,
         roadnetwork=road,
-        catalog=catalog
+        catalog=catalog,
+        osc_minor_version=osc_minor_version
     )
     
     # convert scenario to xml
