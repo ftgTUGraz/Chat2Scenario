@@ -19,13 +19,19 @@ from xml.dom import minidom
 from io import BytesIO
 import xml.etree.ElementTree as ET
 
-def create_act():
+def create_act(osc_minor_version):
+
+    # Determine the correct rule based on the OpenSCENARIO version
+    if osc_minor_version == 0:
+        rule = xosc.Rule.greaterThan
+    else:
+        rule = xosc.Rule.greaterOrEqual
 
     starttrigger = xosc.ValueTrigger(
         "starttrigger",
         0,
         xosc.ConditionEdge.none,
-        xosc.SimulationTimeCondition(0, xosc.Rule.greaterOrEqual),
+        xosc.SimulationTimeCondition(0, rule),
     )
     act = xosc.Act("my_act", starttrigger)
 
@@ -98,7 +104,7 @@ def get_data(folder_path, csv_prefix):
     return recording_meta, tracks_meta, tracks
 
 
-def add_everything(object_track, entities, cataref, init, act):
+def add_everything(object_track, entities, cataref, init, act, osc_minor_version):
     """
     create entity
 
@@ -106,6 +112,11 @@ def add_everything(object_track, entities, cataref, init, act):
         object_track (dataframe): format of csv   
         entities, cataref, init, act: defined previously
     """
+    # Determine the correct rule based on the OpenSCENARIO version
+    if osc_minor_version == 0:
+        rule = xosc.Rule.greaterThan
+    else:
+        rule = xosc.Rule.greaterOrEqual
 
     # create entities
     entityname = "obj_"+str(object_track.iloc[0]['id'])
@@ -136,7 +147,7 @@ def add_everything(object_track, entities, cataref, init, act):
     event = xosc.Event(eventName, xosc.Priority.parallel)
     # create start trigger for event
     trigger = xosc.ValueTrigger("start", 0, xosc.ConditionEdge.none,
-                                xosc.SimulationTimeCondition(0, xosc.Rule.greaterOrEqual))
+                                xosc.SimulationTimeCondition(0, rule))
     # create action
     actionname = entityname + "_action"
 
@@ -169,7 +180,7 @@ def add_everything(object_track, entities, cataref, init, act):
     act.add_maneuver_group(manGroup)
 
 
-def xosc_generation(sim_time, ego_track, target_tracks_sampled):
+def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_version):
     """
     create xosc file
 
@@ -190,21 +201,27 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled):
     entities = xosc.Entities()
     # initialize init
     init = xosc.Init()
+    # Determine the correct rule based on the OpenSCENARIO version
+    if osc_minor_version == 0:
+        rule = xosc.Rule.greaterThan
+    else:
+        rule = xosc.Rule.greaterOrEqual
+
     # stop trigger for storyboard
     storyboard_stoptrigger = xosc.ValueTrigger(
         "stop_simulation",
         0,
         xosc.ConditionEdge.none,
-        xosc.SimulationTimeCondition(sim_time, xosc.Rule.greaterOrEqual),
+        xosc.SimulationTimeCondition(sim_time, rule),
         "stop",
     )
     # create story
     story = create_story("mystory")
     # create act
-    act = create_act()
+    act = create_act(osc_minor_version)
 
     # ego
-    add_everything(ego_track, entities, cataref, init, act)
+    add_everything(ego_track, entities, cataref, init, act, osc_minor_version)
 
     # target
     bb = xosc.BoundingBox(1.8, 4.5, 1.5, 1.3, 0, 0.8)
@@ -218,7 +235,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled):
     red_veh.add_property("model_id", "2")
 
     for target_track_sampled in target_tracks_sampled:
-        add_everything(target_track_sampled, entities, red_veh, init, act)
+        add_everything(target_track_sampled, entities, red_veh, init, act, osc_minor_version)
 
     # add act to story
     story.add_act(act)
@@ -235,7 +252,8 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled):
         entities=entities,
         storyboard=storyboard,
         roadnetwork=road,
-        catalog=catalog
+        catalog=catalog,
+        osc_minor_version=osc_minor_version
     )
     
     # convert scenario to xml
