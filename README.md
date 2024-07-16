@@ -16,14 +16,16 @@ Chat2Scenario is a web-based tool that allows users to search for specific drivi
 
 ## Citation
 ```bibtex
-@misc{zhao2024chat2scenario,
-      title={Chat2Scenario: Scenario Extraction From Dataset Through Utilization of Large Language Model}, 
-      author={Yongqi Zhao and Wenbo Xiao and Tomislav Mihalj and Jia Hu and Arno Eichberger},
-      year={2024},
-      eprint={2404.16147},
-      archivePrefix={arXiv},
-      primaryClass={cs.RO}
-}
+@INPROCEEDINGS{10588843,
+  author={Zhao, Yongqi and Xiao, Wenbo and Mihalj, Tomislav and Hu, Jia and Eichberger, Arno},
+  booktitle={2024 IEEE Intelligent Vehicles Symposium (IV)}, 
+  title={Chat2Scenario: Scenario Extraction From Dataset Through Utilization of Large Language Model}, 
+  year={2024},
+  volume={},
+  number={},
+  pages={559-566},
+  keywords={Measurement;Intelligent vehicles;Large language models;Natural language processing;Testing;Large Language Model;Scenario Extraction;Automated Driving Systems;Virtual Testing},
+  doi={10.1109/IV55156.2024.10588843}}
 ```
 
 ## Usage
