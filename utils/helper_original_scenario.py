@@ -18,6 +18,7 @@ from scipy import stats
 from xml.dom import minidom
 from io import BytesIO
 import xml.etree.ElementTree as ET
+import re
 
 def create_act(osc_minor_version):
 
@@ -113,6 +114,7 @@ def add_everything(object_track, entities, cataref, init, act, osc_minor_version
         entities, cataref, init, act: defined previously
     """
     # Determine the correct rule based on the OpenSCENARIO version
+    condition_edge = xosc.ConditionEdge.none
     if osc_minor_version == 0:
         rule = xosc.Rule.greaterThan
     else:
@@ -146,7 +148,7 @@ def add_everything(object_track, entities, cataref, init, act, osc_minor_version
     eventName = entityname + "_event"
     event = xosc.Event(eventName, xosc.Priority.parallel)
     # create start trigger for event
-    trigger = xosc.ValueTrigger("start", 0, xosc.ConditionEdge.none,
+    trigger = xosc.ValueTrigger("start", 0, condition_edge,
                                 xosc.SimulationTimeCondition(0, rule))
     # create action
     actionname = entityname + "_action"
@@ -179,7 +181,6 @@ def add_everything(object_track, entities, cataref, init, act, osc_minor_version
     manGroup.add_maneuver(man)
     act.add_maneuver_group(manGroup)
 
-
 def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_version):
     """
     create xosc file
@@ -202,6 +203,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_versio
     # initialize init
     init = xosc.Init()
     # Determine the correct rule based on the OpenSCENARIO version
+    condition_edge = xosc.ConditionEdge.none
     if osc_minor_version == 0:
         rule = xosc.Rule.greaterThan
     else:
@@ -211,7 +213,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_versio
     storyboard_stoptrigger = xosc.ValueTrigger(
         "stop_simulation",
         0,
-        xosc.ConditionEdge.none,
+        condition_edge,
         xosc.SimulationTimeCondition(sim_time, rule),
         "stop",
     )
@@ -258,11 +260,15 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_versio
     
     # convert scenario to xml
     root_element = sce.get_element()
+
+    #root_element.append(time_reference.get_element())
+
     xml_string = ET.tostring(root_element, encoding='unicode', method='xml')
     # prettify the xml string
     dom = minidom.parseString(xml_string)
     pretty_xml_string = dom.toprettyxml()
     # sce.write_xml(output_path)
+
     return pretty_xml_string
 
 
