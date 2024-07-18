@@ -99,7 +99,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
         # xosc or txt
         selected_opts = st.selectbox(":bookmark_tabs: Select desired format:", ['xosc', 'txt'])
         # ASAM OpenSCENARIO VERSION 
-        selected_ver = st.selectbox(":new: Select a new option:", ['ASAM OpenSCENARIO V1.2.0', 'ASAM OpenSCENARIO V1.1.0', 'ASAM OpenSCENARIO V1.0.0'])
+        selected_ver = st.selectbox(":new: Select an ASAM OpenSCENARIO version:", ['ASAM OpenSCENARIO V1.2.0', 'ASAM OpenSCENARIO V1.1.0', 'ASAM OpenSCENARIO V1.0.0'])
         # scenario description using naturlistic language from user
         scenario_description = st.text_area(":bulb: Please describe your desired scenarios:", height=15,\
                                             placeholder="To be decided... ...")
