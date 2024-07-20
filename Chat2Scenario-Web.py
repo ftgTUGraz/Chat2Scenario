@@ -96,8 +96,14 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 st.write(f":white_check_mark: Selected metric: **{metric_suboption}**")
         else:
             st.write(":x: Metric is not selected:")
+        
         # xosc or txt
-        selected_opts = st.selectbox(":bookmark_tabs: Select desired format:", ['xosc', 'txt'])
+        #selected_opts = st.selectbox(":bookmark_tabs: Select desired format:", ['xosc', 'txt'])
+        
+        selected_opts = 'xosc'
+        # ASAM OpenSCENARIO VERSION 
+        
+        selected_ver = st.selectbox(":new: Select desired ASAM OpenSCENARIO version:", ['ASAM OpenSCENARIO V1.2.0', 'ASAM OpenSCENARIO V1.1.0', 'ASAM OpenSCENARIO V1.0.0'])
         # scenario description using naturlistic language from user
         scenario_description = st.text_area(":bulb: Please describe your desired scenarios:", height=15,\
                                             placeholder="To be decided... ...")
@@ -210,7 +216,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
 
         # Extract button
         if extract_btn:  
-            extract = check_extract_condition(dataset_load, selected_opts, metric_threshold)
+            extract = check_extract_condition(dataset_load, selected_opts, metric_threshold, selected_ver)
             xosc_files = []
             if extract and csv_format:
                 oriTracksDf = st.session_state.my_data['tracks_original']
@@ -272,7 +278,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                     tgt_tracks = tgtVehTrajs_common
                     
                     if selected_opts == "xosc":
-                        pretty_xml_string = xosc_generation(sim_time, ego_track, tgt_tracks)
+                        version_mapping = {'ASAM OpenSCENARIO V1.2.0': 2, 'ASAM OpenSCENARIO V1.1.0': 1, 'ASAM OpenSCENARIO V1.0.0': 0}
+                        pretty_xml_string = xosc_generation(sim_time, ego_track, tgt_tracks, version_mapping[selected_ver])
                         xosc_files.append(pretty_xml_string)
                         
                     # if selected_opts == "txt":
