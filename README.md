@@ -3,6 +3,7 @@
 ## 🚨 Important News 🚨
 
 **June 17, 2024**: The web app "chat2scenario" is accessiable via [https://chat2scenario.streamlit.app/](https://chat2scenario.streamlit.app/)
+**July 20, 2024**: ASAM OpenSCENARIO 1.0, 1.1, and 1.2 are available. IPG CarMaker text format is decrapted, as CarMaker has been compatible with ASAM OpenSCENARIO since version 13.0,
 
 ## Description
 
