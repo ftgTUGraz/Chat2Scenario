@@ -9,6 +9,7 @@
 ## Description
 
 Chat2Scenario is a web-based tool that allows users to search for specific driving scenarios within a dataset by inputting descriptive functional scenario text. Results are presented in [ASAM OpenSCENARIO](https://www.asam.net/standards/detail/openscenario/) and [IPG CarMaker .txt](https://ipg-automotive.com/en/support/support-request/faq/usage-of-user-inputs-from-a-file-in-a-maneuver-133/) format. 
+For more details of Chat2Scenario implementation, please refer to our paper [here](https://ieeexplore.ieee.org/document/10588843).  
 <table>
   <tr>
     <td><img src="docs/demo.gif" alt="exemplary scenario in Esmini" width="400" height="200" /></td>
