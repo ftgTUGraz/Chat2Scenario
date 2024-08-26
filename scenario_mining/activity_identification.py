@@ -264,7 +264,7 @@ def lateral_activtity_frame_calc(copied_veh_data, refYPosLaneMean, laneChangeFra
         frame_rate = 25
         min_lane_change_frames = int(min_lane_change_time * frame_rate)
         
-        # 计算closest_frame_before_n和closest_frame_after_n
+        # Calculate closest_frame_before_n and closest_frame_after_n
         closest_frame_before_n = n - (min_lane_change_frames // 2)
         closest_frame_after_n = n + (min_lane_change_frames // 2)
         
@@ -323,17 +323,17 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean,dataset_option,file_pat
         series_filled = series.copy()
         n = len(series_filled)
         
-        # 用前向填充和后向填充分别生成两个临时列
+        # Generate two temporary columns with forward fill and backward fill, respectively
         ffill_series = series_filled.fillna(method='ffill')
         bfill_series = series_filled.fillna(method='bfill')
         
         for i in range(n):
             if pd.isna(series_filled.iloc[i]):
-                # 找到前面的非 NaN 值
+                # Find the previous non-NAN value
                 prev_value = ffill_series.iloc[i]
-                # 找到后面的非 NaN 值
+                # Find the following non-NAN value
                 next_value = bfill_series.iloc[i]
-                # 用前面的值填充一半，用后面的值填充另一半
+                # Fill one half with the previous value and the other half with the following value
                 series_filled.iloc[i] = prev_value if i < n / 2 else next_value
         
         return series_filled

@@ -43,7 +43,7 @@ from shapely.geometry import shape, Polygon
 from scenario_mining.exiD_scenario_mining.scenario_identification import *
 
 
-file_path = '78_tracks.csv'
+file_path = '53_tracks.csv'
 
 scenario_identification = ScenarioIdentification()
 
@@ -90,6 +90,7 @@ response = """
     'target lateral activity': ['follow lane']}}}
     """
 
+'''
 # Ego vehicle was trying to on-ramp; The ego vehicle has to watch out the vehicles driving on the highway
 response =""" {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 
     'Ego lateral activity': ['on-ramp']}, 
@@ -98,7 +99,7 @@ response =""" {'Ego Vehicle': {'Ego longitudinal activity': ['NA'],
     'Target behavior': {'target longitudinal activity': ['NA'], 
     'target lateral activity': ['follow lane']}}}"""
 # for cut in
-
+'''
 '''
 # 3240 frames with ego 141, target 145
 response =""" {'Ego Vehicle': {'Ego longitudinal activity': ['NA'], 

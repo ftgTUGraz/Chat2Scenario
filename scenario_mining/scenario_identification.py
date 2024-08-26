@@ -199,18 +199,18 @@ def find_start_end_frame_of_latAct(curr_latActs, req_latAct):
     
     return latActFram
 
-def find_start_end_frame_of_off_ramp(curr_latActs,egoLatAct_endFrame):
+def find_start_end_frame_of_off_ramp(curr_latActs, egoLatAct_endFrame):
     """
-    找到当前 'off-ramp' 活动的开始和结束帧
+    Find the start and end frames of the current 'off-ramp' activity
 
-    参数:
+    Parameters:
     -----------
-    输入:
-        curr_latActs (df): 包含描述活动的列的数据框 
+    Input:
+        curr_latActs (df): DataFrame containing columns that describe the activity
         [frame, id, LateralActivity, laneId, x, y]
 
-    返回:
-        latActFram (list): 包含两个值的列表，表示开始和结束帧。
+    Returns:
+        latActFram (list): List containing two values representing the start and end frames.
     ----------
     """
     latActFram = []
@@ -219,7 +219,7 @@ def find_start_end_frame_of_off_ramp(curr_latActs,egoLatAct_endFrame):
         endFrame = egoLatAct_endFrame
         latActFram.append(begFrame)
         latActFram.append(endFrame)
-    return latActFram
+    return latActFram 
 
 def find_start_end_frame_of_lonAct(curr_lonActs, req_lonAct):
     """

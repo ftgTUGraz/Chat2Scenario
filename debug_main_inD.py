@@ -43,8 +43,8 @@ reminder_holder = st.empty()
 animation_holder = st.empty()
 
 tracks_original = pd.read_csv(dataset_load) 
-tracks_meta_df = OpenDriveMapSelector(dataset_load).select_opendrive_map()
-
+#tracks_meta_df = OpenDriveMapSelector(dataset_load).select_opendrive_map()
+tracks_meta_df = OpenDriveMapSelector(dataset_load,tracks_original).select_opendrive_map()
 response1 = """
 {
     'Ego Vehicle': 
