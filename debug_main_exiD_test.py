@@ -43,7 +43,7 @@ from shapely.geometry import shape, Polygon
 from scenario_mining.exiD_scenario_mining.scenario_identification import *
 
 
-file_path = '53_tracks.csv'
+file_path = '39_tracks.csv'
 
 scenario_identification = ScenarioIdentification()
 

@@ -265,7 +265,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                         animation_holder = st.empty()
                         scenario_identification = ScenarioIdentification()
                         #tracks_original = pd.read_csv(dataset_load) 
-                        json_data,updated_tracks_df =  scenario_identification.select_playground(dataset_load.name)
+                        json_data,updated_tracks_df =  scenario_identification.select_playground(dataset_load)
                         #json_data,updated_tracks_df = select_playground(dataset_load.name)
                         print('\n\n',dataset_load,'\n\n')
 
