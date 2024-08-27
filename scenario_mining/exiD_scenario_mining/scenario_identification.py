@@ -85,7 +85,7 @@ class ScenarioIdentification:
         # Initialize the plot
         fig, ax = plt.subplots()
         # Extract the number from the file name
-        match = re.search(r'\d+', file_path)
+        match = re.search(r'\d+', file_path.name)
         if match:
             index = int(match.group(0))
             # Select the corresponding playground module based on different number ranges
@@ -98,7 +98,8 @@ class ScenarioIdentification:
                     output_file_1_18 = f'{index}_updated_tracks.csv'
 
                 track_processor = playground1_18.TrackDataProcessor()
-                updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_1_18, onramp_polygon_1_18, offramp_polygon_1_18, lanes_polygons_1_18)
+                #updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_1_18, onramp_polygon_1_18, offramp_polygon_1_18, lanes_polygons_1_18)
+                updated_tracks_df = track_processor.extract_turn_type_and_lane(file_path, onramp_polygon_1_18, offramp_polygon_1_18, lanes_polygons_1_18)
                 ax.set_xlabel("X Coordinate")
                 ax.set_ylabel("Y Coordinate")
                 ax.set_title("Visualization of Polygons from JSON Data")
@@ -111,7 +112,8 @@ class ScenarioIdentification:
                 input_file_19_38 = f'{index}_tracks.csv'
                 output_file_19_38 = f'{index}_updated_tracks.csv'
                 track_processor = playground19_38.TrackDataProcessor()
-                updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_19_38, onramp_polygons_19_38, offramp_polygons_19_38, lanes_polygons_19_38)
+                #updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_19_38, onramp_polygons_19_38, offramp_polygons_19_38, lanes_polygons_19_38)
+                updated_tracks_df = track_processor.extract_turn_type_and_lane(file_path, onramp_polygons_19_38, offramp_polygons_19_38, lanes_polygons_19_38)
                 ax.set_xlabel("X Coordinate")
                 ax.set_ylabel("Y Coordinate")
                 ax.set_title("Visualization of Polygons from JSON Data")
@@ -124,7 +126,8 @@ class ScenarioIdentification:
                 input_file_39_52 = f'{index}_tracks.csv'
                 output_file_39_52 = f'{index}_updated_tracks.csv'
                 track_processor = playground39_52.TrackDataProcessor()
-                updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_39_52, onramp_polygons_39_52, offramp_polygons_39_52, lanes_polygons_39_52)
+                #updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_39_52, onramp_polygons_39_52, offramp_polygons_39_52, lanes_polygons_39_52)
+                updated_tracks_df = track_processor.extract_turn_type_and_lane(file_path, onramp_polygons_39_52, offramp_polygons_39_52, lanes_polygons_39_52)
                 ax.set_xlabel("X Coordinate")
                 ax.set_ylabel("Y Coordinate")
                 ax.set_title("Visualization of Polygons from JSON Data")
@@ -137,7 +140,8 @@ class ScenarioIdentification:
                 input_file_53_60 = f'{index}_tracks.csv'
                 output_file_53_60 = f'{index}_updated_tracks.csv'
                 track_processor = playground53_60.TrackDataProcessor()
-                updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_53_60, onramp_polygons_53_60, offramp_polygons_53_60, lanes_polygons_53_60)
+                #updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_53_60, onramp_polygons_53_60, offramp_polygons_53_60, lanes_polygons_53_60)
+                updated_tracks_df = track_processor.extract_turn_type_and_lane(file_path, onramp_polygons_53_60, offramp_polygons_53_60, lanes_polygons_53_60)
                 ax.set_xlabel("X Coordinate")
                 ax.set_ylabel("Y Coordinate")
                 ax.set_title("Visualization of Polygons from JSON Data")
@@ -150,7 +154,8 @@ class ScenarioIdentification:
                 input_file_61_72 = f'{index}_tracks.csv'
                 output_file_61_72 = f'{index}_updated_tracks.csv'
                 track_processor = playground61_72.TrackDataProcessor()
-                updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_61_72, onramp_polygons_61_72, offramp_polygons_61_72, lanes_polygons_61_72)
+                #updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_61_72, onramp_polygons_61_72, offramp_polygons_61_72, lanes_polygons_61_72)
+                updated_tracks_df = track_processor.extract_turn_type_and_lane(file_path, onramp_polygons_61_72, offramp_polygons_61_72, lanes_polygons_61_72)
                 ax.set_xlabel("X Coordinate")
                 ax.set_ylabel("Y Coordinate")
                 ax.set_title("Visualization of Polygons from JSON Data")
@@ -163,7 +168,8 @@ class ScenarioIdentification:
                 input_file_73_77 = f'{index}_tracks.csv'
                 output_file_73_77 = f'{index}_updated_tracks.csv'
                 track_processor = playground73_77.TrackDataProcessor()
-                updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_73_77, onramp_polygons_73_77, {}, lanes_polygons_73_77)
+                #updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_73_77, onramp_polygons_73_77, {}, lanes_polygons_73_77)
+                updated_tracks_df = track_processor.extract_turn_type_and_lane(file_path, onramp_polygons_73_77, {}, lanes_polygons_73_77)
                 ax.set_xlabel("X Coordinate")
                 ax.set_ylabel("Y Coordinate")
                 ax.set_title("Visualization of Polygons from JSON Data")
@@ -176,7 +182,8 @@ class ScenarioIdentification:
                 input_file_78_92 = f'{index}_tracks.csv'
                 output_file_78_92 = f'{index}_updated_tracks.csv'
                 track_processor = playground78_92.TrackDataProcessor()
-                updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_78_92, onramp_polygons_78_92, {}, lanes_polygons_78_92)
+                #updated_tracks_df = track_processor.extract_turn_type_and_lane(input_file_78_92, onramp_polygons_78_92, {}, lanes_polygons_78_92)
+                updated_tracks_df = track_processor.extract_turn_type_and_lane(file_path, onramp_polygons_78_92, {}, lanes_polygons_78_92)
                 ax.set_xlabel("X Coordinate")
                 ax.set_ylabel("Y Coordinate")
                 ax.set_title("Visualization of Polygons from JSON Data")
