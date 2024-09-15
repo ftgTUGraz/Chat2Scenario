@@ -377,7 +377,7 @@ class BendplatzProcessor:
         # Process the OpenDRIVE file to get road and lane path data
 
         # Load road and lane path data from a pickle file
-        file_path = 'bendplatz_01.pkl'
+        file_path = 'map_data/InD_map_data/bendplatz_01.pkl'
         self.road_lane_paths = BendplatzProcessor.load_road_lane_paths_pickle(file_path)    
         
         

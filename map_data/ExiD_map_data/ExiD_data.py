@@ -4169,7 +4169,7 @@ json_data_39_52 = [
 ]
 }
 ]
-# 将 JSON 数据转换为包含 Polygon 对象的列表
+# convertit les données JSON en une liste contenant des objets Polygon
 
 ]
 

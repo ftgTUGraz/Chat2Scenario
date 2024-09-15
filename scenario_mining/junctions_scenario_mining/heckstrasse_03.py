@@ -344,7 +344,7 @@ class HeckstrasseProcessor:
         """
         #tracks_meta_df = pd.read_csv(csv_path)
         tracks_meta_df = csv_path
-        file_path = 'heckstrasse_03.pkl'
+        file_path = 'map_data/InD_map_data/heckstrasse_03.pkl'
         self.road_lane_paths = self.load_road_lane_paths_pickle(file_path)
 
         fig, ax = plt.subplots()
