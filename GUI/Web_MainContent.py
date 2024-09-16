@@ -28,7 +28,7 @@ import scenario_mining.junctions_scenario_mining.heckstrasse_03 as heckstrasse
 import scenario_mining.junctions_scenario_mining.aseag_04 as aseag
 import matplotlib.patches as patches
 import numpy as np
-from map_data.ExiD_map_data.ExiD_data import lane_markings_data
+from map_data.High_map_data.HighD_data import lane_markings_data
 
 import shapely.wkt
 import pickle

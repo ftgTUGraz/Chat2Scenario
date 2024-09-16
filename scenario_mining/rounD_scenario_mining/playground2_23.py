@@ -3,6 +3,8 @@ import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 from pyproj import Transformer
+import importlib
+import RounD_data as RounD_data
 
 def parse_kml_coordinates(kml_file):
     tree = ET.parse(kml_file)
@@ -30,6 +32,25 @@ def transform_coordinates(coords, x_utm_origin, y_utm_origin):
         local_y = y - y_utm_origin
         transformed_coords.append((local_x, local_y))
     return transformed_coords
+    
+def write_lane_polygons_to_file(lane_polygons, filename, lane_set_name):
+    with open(filename, 'a') as f:  # Use 'a' mode to append to the file
+        # 写入每个车道的多边形数据
+        for lane_id, polygons in lane_polygons.items():
+            for i, polygon in enumerate(polygons):
+                coords = list(polygon.exterior.coords)
+                coords_str = ", ".join(f"({x:.6f}, {y:.6f})" for x, y in coords)
+                
+                # 写入多边形坐标
+                f.write(f"{lane_set_name}_lane_{lane_id}_polygon_{i}_coords = [{coords_str}]\n")
+                f.write(f"{lane_set_name}_lane_{lane_id}_polygon_{i} = Polygon({lane_set_name}_lane_{lane_id}_polygon_{i}_coords)\n\n")
+
+        # 创建一个包含所有多边形的列表
+        f.write(f"{lane_set_name} = [\n")
+        for lane_id, polygons in lane_polygons.items():
+            for i in range(len(polygons)):
+                f.write(f"    {lane_set_name}_lane_{lane_id}_polygon_{i},\n")
+        f.write("]\n\n")
 
 def read_tracks(file_path):
     tracks = []
@@ -89,9 +110,9 @@ def determine_activity_type(lane_sequence):
         return "turn right"
     return None
 
-def plot_multiple_polygons(lane_polygons, x_utm_origin, y_utm_origin):
+def plot_multiple_polygons(lane_polygons):
     fig, ax = plt.subplots()
-    colormap = plt.colormaps['hsv']
+    colormap = plt.get_cmap('hsv')
     
     for i, (lane_id, polygons) in enumerate(lane_polygons.items()):
         color = colormap(i / len(lane_polygons))  # Use hsv colormap for diverse colors
@@ -109,7 +130,27 @@ def plot_multiple_polygons(lane_polygons, x_utm_origin, y_utm_origin):
     ax.legend(unique_labels.values(), unique_labels.keys())
     plt.show()
 
+def write_lane_polygons_to_file(lane_polygons, filename, lane_set_name):
+    with open(filename, 'a') as f:  # Use 'a' mode to append to the file
+        # 写入每个车道的多边形数据
+        for lane_id, polygons in lane_polygons.items():
+            for i, polygon in enumerate(polygons):
+                coords = list(polygon.exterior.coords)
+                coords_str = ", ".join(f"({x:.6f}, {y:.6f})" for x, y in coords)
+                
+                # 写入多边形坐标
+                f.write(f"{lane_set_name}_lane_{lane_id}_polygon_{i}_coords = [{coords_str}]\n")
+                f.write(f"{lane_set_name}_lane_{lane_id}_polygon_{i} = Polygon({lane_set_name}_lane_{lane_id}_polygon_{i}_coords)\n\n")
+
+        # 创建一个包含所有多边形的列表
+        f.write(f"{lane_set_name} = [\n")
+        for lane_id, polygons in lane_polygons.items():
+            for i in range(len(polygons)):
+                f.write(f"    {lane_set_name}_lane_{lane_id}_polygon_{i},\n")
+        f.write("]\n\n")
+
 def main():
+    '''
     # List of KML files
     kml_files = {
         1: ['playground2-23_lane1-outer.kml', 'playground2-23_lane1_inner.kml'],
@@ -135,7 +176,7 @@ def main():
     x_utm_origin = 301221.3650
     y_utm_origin = 5641501.3410
 
-    lane_polygons = {}
+    
     
     # Parse each KML file and transform coordinates
     for lane_id, files in kml_files.items():
@@ -147,9 +188,16 @@ def main():
             polygons.append(polygon)
         lane_polygons[lane_id] = polygons
 
-    # Plot polygons
-    plot_multiple_polygons(lane_polygons, x_utm_origin, y_utm_origin)
-
+    # 将 lane polygons 数据写入 Python 文件
+    write_lane_polygons_to_file(lane_polygons, 'RounD_data.py', 'lanes_polygons2_23')
+    '''
+    # 强制重新加载模块以确保加载最新的内容
+    
+    importlib.reload(RounD_data)
+    
+    # 从 RounD_data.py 文件中导入并绘制多边形
+    plot_multiple_polygons({i: [polygon] for i, polygon in enumerate(RounD_data.lanes_polygons2_23)})
+    lane_polygons = {}
     # Read track data
     tracks_file = '02_tracks.csv'  # Path to the track data file
     tracks = read_tracks(tracks_file)

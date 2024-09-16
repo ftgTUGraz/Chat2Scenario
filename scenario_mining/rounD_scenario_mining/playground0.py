@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 from pyproj import Transformer
+import RounD_data as RounD_data
 
 def parse_kml_coordinates(kml_file):
     tree = ET.parse(kml_file)
@@ -103,9 +104,9 @@ def determine_activity_type(lane_sequence):
             return "making U-turn"
     return None
 
-def plot_multiple_polygons(lane_polygons, x_utm_origin, y_utm_origin):
+def plot_multiple_polygons(lane_polygons):
     fig, ax = plt.subplots()
-    colormap = plt.colormaps['hsv']
+    colormap = plt.get_cmap('hsv')
     
     for i, (lane_id, polygons) in enumerate(lane_polygons.items()):
         color = colormap(i / len(lane_polygons))  # Use hsv colormap for diverse colors
@@ -123,7 +124,30 @@ def plot_multiple_polygons(lane_polygons, x_utm_origin, y_utm_origin):
     ax.legend(unique_labels.values(), unique_labels.keys())
     plt.show()
 
+def write_lane_polygons_to_file(lane_polygons, filename):
+    with open(filename, 'w') as f:
+        # 写入头部导入声明
+        f.write("from shapely.geometry import Polygon\n\n")
+
+        # 写入每个车道的多边形数据
+        for lane_id, polygons in lane_polygons.items():
+            for i, polygon in enumerate(polygons):
+                coords = list(polygon.exterior.coords)
+                coords_str = ", ".join(f"({x:.6f}, {y:.6f})" for x, y in coords)
+                
+                # 写入多边形坐标
+                f.write(f"lane_{lane_id}_polygon_{i}_coords = [{coords_str}]\n")
+                f.write(f"lane_{lane_id}_polygon_{i} = Polygon(lane_{lane_id}_polygon_{i}_coords)\n\n")
+
+        # 创建一个包含所有多边形的列表
+        f.write("lanes_polygons = [\n")
+        for lane_id, polygons in lane_polygons.items():
+            for i in range(len(polygons)):
+                f.write(f"    lane_{lane_id}_polygon_{i},\n")
+        f.write("]\n")
+
 def main():
+    '''
     # List of KML files
     kml_files = {
         1: ['playground0_lane1_inner.kml', 'playground0_lane1_onner.kml'],
@@ -143,7 +167,7 @@ def main():
     x_utm_origin = 292669.4681
     y_utm_origin = 5630731.704
 	
-    lane_polygons = {}
+    
     
     # Parse each KML file and transform coordinates
     for lane_id, files in kml_files.items():
@@ -155,9 +179,13 @@ def main():
             polygons.append(polygon)
         lane_polygons[lane_id] = polygons
 
+    # Save lane polygons data to a Python file
+    #write_lane_polygons_to_file(lane_polygons, 'RounD_data.py')
+    '''
     # Plot polygons
-    plot_multiple_polygons(lane_polygons, x_utm_origin, y_utm_origin)
-
+    #plot_multiple_polygons(lane_polygons, x_utm_origin, y_utm_origin)
+    plot_multiple_polygons({i: [polygon] for i, polygon in enumerate(RounD_data.lanes_polygons)})
+    lane_polygons = {}
     # Read track data
     tracks_file = '00_tracks.csv'  # Path to the track data file
     tracks = read_tracks(tracks_file)
