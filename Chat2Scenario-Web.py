@@ -7,7 +7,7 @@ Email: yongqi.zhao@tugraz.at
 import streamlit as st
 import pandas as pd
 from GUI.Web_Sidebar import *
-from utils.helper_original_scenario import generate_xosc
+from utils.helper_original_scenario import generate_xosc, convert_to_native
 from utils.helper_data_functions import calc_heading
 import time
 from GUI.Web_MainContent import *
@@ -116,11 +116,13 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
 
     # The second column
     with col2:
-        preview_col1, extract_col2 = st.columns(2)
+        preview_col1, extract_col2, extract_col3 = st.columns(3)
         with preview_col1:
             preview_button = st.button(":eyes: Preview searched scenario")
         with extract_col2:
-            extract_btn = st.button(":arrow_down: Extract original scenario")
+            extract_btn_meta = st.button(":arrow_down: Extract scenario list")
+        with extract_col3:
+            extract_btn = st.button(":arrow_down: Extract scenario file")
 
         reminder_holder = st.empty()
 
@@ -132,6 +134,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 reminder_holder.warning(':thinking_face: Start understand scenario using LLM...')
                 progress_bar = st.progress(0)
                 key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar)
+                st.session_state.my_data['key_label'] = key_label # add key_label to session state
                 print(key_label)
                 if key_label is None:
                     warning_messages = """
@@ -157,6 +160,9 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                         scenarioList = mainFunctionScenarioIdentification(tracks_original, key_label, latActDict, longActDict, interactIdDict, progress_bar)
                         print("The following scenarios are in the scenario pool:")
                         print(scenarioList)
+
+                        # Save the scenario list into a file
+
                         
                         # Calculate the metric value for frames when the requirements can be met
                         reminder_holder.warning(f"{len(scenarioList)} scenarios are found. Start calculate metric values...")
@@ -213,6 +219,49 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                     preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option)
                 # else:
                 #     reminder_holder.warning(":cry: No scenarios are selected from the pool. Try to reset the criticality metric/value or check the openai key.")
+
+        if extract_btn_meta:
+            # List: [[egoVehID, [tgtVehID,...], startFrame, endFrame],[],[]...]
+            desired_scenarios = st.session_state.my_data['desired_scenario']
+            
+            # Create a DataFrame for the scenario list
+            print("The following scenarios are selected: ")
+            for scenario in desired_scenarios:
+                print(scenario)
+            
+            # Extract track number from the file name of the uploaded dataset
+            track_num = dataset_load.name.split("/")[-1].split("_")[0]  # Use dataset_load.name instead of dataset_load
+
+            # Convert desired_scenarios to native Python types
+            desired_scenarios_native = convert_to_native(desired_scenarios)
+            
+            # Save the scenario list into a json file
+            output_path_json = f"{dataset_option}_{track_num}_scenario_list.json"
+            
+            # Create a dict 
+            output_dict = {
+                'track_num': track_num,
+                'scenario': {
+                    'scenario_description': st.session_state.my_data['key_label'],
+                    'scenario_list': desired_scenarios_native,  # Use the converted list
+                    'metric_option': metric_option,
+                    'metric_suboption': metric_suboption,
+                    'metric_threshold': metric_threshold
+                }
+            }
+                    
+            # Convert the dictionary to a JSON string first
+            json_str = json.dumps(output_dict, indent=4)
+
+            reminder_holder.warning("The meta file for the scenario list is generated. Click the button below to download.")
+
+            # Create a download button to download the JSON file
+            st.download_button(
+                label="Download scenario JSON",
+                data=json_str,
+                file_name=f"{dataset_option}_{track_num}_scenario_list.json",
+                mime="application/json"
+            )
 
         # Extract button
         if extract_btn:  

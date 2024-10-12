@@ -953,3 +953,17 @@ def if_scenario_within_threshold(metric_value_res, metric_threshold):
             return True
         else:
             return False
+        
+def convert_to_native(obj):
+    if isinstance(obj, dict):
+        return {k: convert_to_native(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_native(element) for element in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        return obj
