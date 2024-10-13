@@ -184,7 +184,7 @@ def get_activity_from_LLM_response(LLM_response):
     return req_ego_latAct, req_ego_lonAct, req_tgt_startPos, req_tgt_endPos, req_tgt_latAct, req_tgt_longAct
 
 
-def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longActDict, interactIdDict, progress_bar):
+def mainFunctionScenarioIdentification(tracks_36, key_label, latActDict, longActDict, interactIdDict, progress_bar=None):
     """
     main function to search the desired scenarios
 

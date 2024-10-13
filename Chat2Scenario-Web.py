@@ -161,9 +161,6 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                         print("The following scenarios are in the scenario pool:")
                         print(scenarioList)
 
-                        # Save the scenario list into a file
-
-                        
                         # Calculate the metric value for frames when the requirements can be met
                         reminder_holder.warning(f"{len(scenarioList)} scenarios are found. Start calculate metric values...")
                         indexProgress = 0
@@ -178,8 +175,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                             initialFrame = curr_scenario[2]
                             finalFrame = curr_scenario[3]
                             egoVehData, tgtVehsData = find_vehicle_data_within_start_end_frame(tracks_original, egoId, targetIds, initialFrame, finalFrame)
-                            metric_value_res = calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehsData, reminder_holder, metric_option, \
-                                            metric_suboption, CA_Input, tracks_original, st.session_state.my_data['framerate'], target_value)
+                            metric_value_res = calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehsData, metric_option, \
+                                            metric_suboption, CA_Input, tracks_original, st.session_state.my_data['framerate'], target_value, reminder_holder)
                             # Compare the calculated metric value with predefined threshold
                             isScenario = if_scenario_within_threshold(metric_value_res, metric_threshold)
                             if isScenario:
@@ -190,9 +187,6 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                             indexProgress += 1
                             if indexProgress == len(scenarioList):
                                 progress_bar.progress(100)
-
-                # reminder_holder.write(st.session_state.my_data['desired_scenario'])
-
 
                 ## Scenario visualization
                 if len(st.session_state.my_data['desired_scenario']) != 0:
@@ -223,15 +217,13 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
         if extract_btn_meta:
             # List: [[egoVehID, [tgtVehID,...], startFrame, endFrame],[],[]...]
             desired_scenarios = st.session_state.my_data['desired_scenario']
+            track_num = dataset_load.name.split("/")[-1].split("_")[0]  # Use dataset_load.name instead of dataset_load
             
             # Create a DataFrame for the scenario list
             print("The following scenarios are selected: ")
             for scenario in desired_scenarios:
                 print(scenario)
             
-            # Extract track number from the file name of the uploaded dataset
-            track_num = dataset_load.name.split("/")[-1].split("_")[0]  # Use dataset_load.name instead of dataset_load
-
             # Convert desired_scenarios to native Python types
             desired_scenarios_native = convert_to_native(desired_scenarios)
             

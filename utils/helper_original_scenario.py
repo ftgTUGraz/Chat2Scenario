@@ -530,8 +530,8 @@ def find_vehicle_data_within_start_end_frame(tracks_original, egoId, targetIds, 
     return egoVehData, tgtVehsData
 
 
-def calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehData, reminder_holder, metric_option, metric_suboption, \
-                                                   CA_Input, tracks_original, frame_rate, target_value):
+def calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehData, metric_option, metric_suboption, \
+                                                   CA_Input, tracks_original, frame_rate, target_value, reminder_holder=None):
     """
     Calculate metric value for each frame for desired scenario segment
 
@@ -636,7 +636,8 @@ def calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehData, remin
             return metric_df
     elif metric_option == "Velocity-Scale":
         if metric_suboption == "delta_v":
-            reminder_holder.warning(f':collision: No collision was identified in highD dataset.')
+            if reminder_holder is not None:
+                reminder_holder.warning(f':collision: No collision was identified in highD dataset.')
     pass
 
 
