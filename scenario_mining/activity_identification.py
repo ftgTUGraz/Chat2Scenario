@@ -12,6 +12,7 @@ from numpy.polynomial.polynomial import Polynomial
 from scipy.signal import find_peaks
 import time
 import streamlit as st
+from tqdm import tqdm 
 
 def classify_vehicle_maneuver(velocities, accel_rate_threshold):
     """
@@ -211,7 +212,7 @@ def lateral_activtity_frame_calc(copied_veh_data, refYPosLaneMean, laneChangeFra
         return closest_frame_before_n, closest_frame_after_n
 
 
-def lateral_activtity_calc(vehicle_data, refYPosLaneMean):
+def lateral_activity_calc(vehicle_data, refYPosLaneMean):
     """
     Calculate vehicle lateral activity [follow lane; lane change to the left; lane change to the right]
 
@@ -290,36 +291,54 @@ def lateral_activtity_calc(vehicle_data, refYPosLaneMean):
         return latActRes
 
 
-def main_fcn_veh_activity(tracks, progress_bar):
+def main_fcn_veh_activity(tracks, progress_bar=None):
     """
-    Main functions to get all desired vehicle activity [keep velocity; acceleration; deceleration]
+    Main function to get all desired vehicle activities [keep velocity; acceleration; deceleration]
 
     Parameters:
     ----------
     Inputs:
-        tracks (df): a dataframe containing vehicle trajectory, which can be load by pd.read_csv()
+        tracks (pd.DataFrame): A dataframe containing vehicle trajectory, which can be loaded by pd.read_csv()
+        progress_callback (callable, optional): A function to update progress.
+                                               Should accept a single integer argument (percentage).
+                                               Example for Streamlit: progress_bar.progress
+                                               Example for scripts: lambda x: print(f"Progress: {x}%")
+                                               Example with tqdm: pbar.update
 
     Returns:
-        longActDict (dict): a dictionary containing longitudinal activites id: df['frame', 'id', 'LongitudinalActivity', 'lateral', 'x', 'y']
-        latActDict (dict): a dictionary containing lateral activites id: df['frame', 'id', 'LateralActivity', 'lateral', 'x', 'y']
-        interactIdDict (dict): a dictionary containing fictive ego vehicles and correspondong target vehicles id: df[id1, id2, id3,...]
-    ---------
+        longActDict (dict): Dictionary containing longitudinal activities per vehicle ID.
+        latActDict (dict): Dictionary containing lateral activities per vehicle ID.
+        interactIdDict (dict): Dictionary containing interacting vehicle IDs per ego vehicle ID.
+    ----------
     """
     # Initialize dictionaries to store results
-    longActDict = dict()
-    latActDict = dict()
-    interactIdDict = dict()
+    longActDict = {}
+    latActDict = {}
+    interactIdDict = {}
 
     # Extract desired activities; calculate YPos reference if "lane change" is desired
     refYPosLaneMean = lane_yPos_calc(tracks)
 
     start_time = time.time()
     unique_ids = tracks['id'].unique()
+    total_ids = len(unique_ids)
     index = 0
+
+    # Initialize tqdm progress bar if not using a progress callback
+    use_tqdm = False
+    if progress_bar is None:
+        use_tqdm = True
+        pbar = tqdm(total=100, desc="Processing Vehicles")
+
     for unique_id in unique_ids:
-        # Update progress bar
-        progress = int((index + 1) / len(unique_ids) * 100)
-        progress_bar.progress(progress)
+        # Calculate progress percentage
+        progress = int((index + 1) / total_ids * 100)
+
+        # Update progress
+        if progress_bar:
+            progress_bar.progress(progress)
+        elif use_tqdm:
+            pbar.update(progress - pbar.n if progress > pbar.n else 0)
 
         # Current vehicle
         vehicle_id = unique_id
@@ -329,12 +348,13 @@ def main_fcn_veh_activity(tracks, progress_bar):
         longActRes = longitudinal_activity_calc(vehicle_data)
 
         # Lateral activity calculation
-        latActRes = lateral_activtity_calc(vehicle_data, refYPosLaneMean)
+        latActRes = lateral_activity_calc(vehicle_data, refYPosLaneMean)
         
-        # If meet both lateral and longitudinal activities
+        # Store results
         longActDict[vehicle_id] = longActRes
         latActDict[vehicle_id] = latActRes
 
+        # Identify interacting vehicles
         interaction_columns = [
             "precedingId", "followingId", "leftPrecedingId", "leftAlongsideId", 
             "leftFollowingId", "rightPrecedingId", "rightAlongsideId", "rightFollowingId"
@@ -351,8 +371,15 @@ def main_fcn_veh_activity(tracks, progress_bar):
         index += 1
 
     # Complete the progress
-    progress_bar.progress(100)
+    if progress_bar:
+        progress_bar.progress(100)
+    elif use_tqdm:
+        pbar.update(100 - pbar.n)  # Ensure the bar completes
+        pbar.close()
+
     end_time = time.time()
-    print(f'It takes {end_time-start_time} seconds!')
+    if not progress_bar:
+        print(f'Processing completed in {end_time - start_time:.2f} seconds!')
+
     return longActDict, latActDict, interactIdDict
 
