@@ -10,6 +10,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from io import BytesIO
 from PIL import Image
+from map_data.InD_map_data.heckstrasse_03_data import road_lane_paths_data   
 
 class HeckstrasseProcessor:
     def __init__(self):
@@ -344,9 +345,28 @@ class HeckstrasseProcessor:
         """
         #tracks_meta_df = pd.read_csv(csv_path)
         tracks_meta_df = csv_path
+        np.set_printoptions(threshold=np.inf)
+        '''
         file_path = 'map_data/InD_map_data/heckstrasse_03.pkl'
-        self.road_lane_paths = self.load_road_lane_paths_pickle(file_path)
+        #self.road_lane_paths = self.load_road_lane_paths_pickle(file_path)
 
+        try:
+            with open(file_path, 'rb') as file:
+                data = pickle.load(file)
+            
+            with open('map_data/InD_map_data/heckstrasse_03_data.py', 'w', encoding='utf-8') as py_file:
+                py_file.write("import numpy as np\n")
+                py_file.write("from matplotlib.path import Path\n")
+                
+                data_str = repr(data).replace("array(", "np.array(").replace("dtype=uint8", "dtype=np.uint8")
+                py_file.write("road_lane_paths_data = ")
+                py_file.write(data_str)
+        except FileNotFoundError:
+            "File not found. Please check the path."
+        except Exception as e:
+            f"An error occurred: {e}"
+        '''
+        self.road_lane_paths = road_lane_paths_data
         fig, ax = plt.subplots()
         self.plot_road_lane_paths(ax, self.road_lane_paths)
 

@@ -18,7 +18,7 @@ def sidebar():
     Inputs:
         None
     Returns:
-        dataset_option (str): selected dataset ['highD', 'inD', 'roundD', 'exitD', 'AD4CHE'] 
+        dataset_option (str): selected dataset ['highD', 'inD', 'rounD', 'exitD', 'AD4CHE'] 
         option_metric (str): metric clssificationss belonging to ['Acceleration-Scale', 'Distance-Scale', 'Jerk-Scale', 'Time-Scale', 'Velocity-Scale']
         suboption_metric (str): concrete metric to search scenario in the dataset e.g., "Time To Collision (TTC)"
         dataset_load (str): path of uploaded dataset 
@@ -36,7 +36,7 @@ def sidebar():
         '</style>',
         unsafe_allow_html=True
         )
-        dataset_option = st.sidebar.radio(":mag: Select dataset", ['highD', 'inD', 'roundD', 'exitD', 'uniD', 'AD4CHE'])
+        dataset_option = st.sidebar.radio(":mag: Select dataset", ['highD', 'inD', 'rounD', 'exitD', 'uniD', 'AD4CHE'])
 
 
         # 2. Upload Dataset

@@ -66,6 +66,17 @@ classification_framework_exitD = {
     }
 }
 
+classification_framework_RounD = {
+    "ego": 
+    {
+        "roundabout_activity": ["enter", "exit"]
+    },
+    "target": 
+    {
+        "roundabout_activity": ["enter", "inside", "exit", "inside_or_exit"]
+    }
+}
+
 
 ### Openai LLM to process human language of scenario description
 def LLM_process_scenario_description(openai_key, scenario_description, classification_framework,dataset_option, classification_framework_inD):
@@ -197,6 +208,35 @@ def LLM_process_scenario_description(openai_key, scenario_description, classific
             "}\n\n"\
             "Remember to analyze carefully and provide the classification as per the structure given above."
 
+    elif dataset_option == "rounD":
+        # Prompt design for rounD dataset
+        prompt = f"System, you are an AI trained to understand and classify roundabout driving scenarios based on specific frameworks. Your task is to analyze the following roundabout driving scenario and classify the behavior of both the ego vehicle and the target vehicle according to the given classification framework. Please follow the framework strictly and provide precise and clear classifications. The framework is as follows:\n\n{json.dumps(classification_framework_RounD, indent=4)}\n\n"\
+            "Scenario Description: \n"\
+            f"'{scenario_description}'\n\n"\
+            "Provide a detailed classification for both the ego vehicle and the target vehicle(s). The response should be formatted exactly as shown in this structure:\n"\
+            "{\n"\
+            "    'Ego Vehicle': \n"\
+            "    {\n"\
+            "        'roundabout_activity': 'Your Classification'\n"\
+            "    },\n"\
+            "    'Target Vehicle': \n"\
+            "    {\n"\
+            "        'roundabout_activity': 'Your Classification'\n"\
+            "    }\n"\
+            "}\n\n"\
+            "Example:\n"\
+            "If an ego vehicle is entering the roundabout while a target vehicle is circulating inside the roundabout, the classification would be:\n"\
+            "{\n"\
+            "    'Ego Vehicle': \n"\
+            "    {\n"\
+            "        'roundabout_activity': 'enter'\n"\
+            "    },\n"\
+            "    'Target Vehicle': \n"\
+            "    {\n"\
+            "        'roundabout_activity': 'inside'\n"\
+            "    }\n"\
+            "}\n\n"\
+            "Remember to analyze carefully and provide the classification as per the structure given above."
 
     # Assign openai key
     openai.api_key = openai_key
@@ -329,6 +369,15 @@ def validate_scenario(sample, reminder_holder, dataset_option):
                 }
             }
         }
+    elif dataset_option == "rounD":
+        model = {
+            'Ego Vehicle': {
+                'roundabout_activity': ['enter', 'exit']
+            },
+            'Target Vehicle': {
+                'roundabout_activity': ['enter', 'inside', 'exit', 'inside_or_exit']
+            }
+        }
     else:
         reminder_holder.warning(":cry: Invalid dataset option.")
         return False
@@ -441,7 +490,21 @@ def validate_scenario(sample, reminder_holder, dataset_option):
         if not egoLatActCheck:
             reminder_holder.warning(":cry: Invalid lateral activities for Ego Vehicle. Enrich your descriptive text of scenarios.")
             return False
+        
+    elif dataset_option == "rounD":
+        # Check Ego roundabout activity
+        try:
+            ego_roundabout_act = ego_activities.get('roundabout_activity', '')
+            if not ego_roundabout_act:
+                reminder_holder.warning(":cry: Invalid Ego roundabout activity. Enrich your descriptive text of scenarios.")
+                return False
+        except AttributeError:
+            reminder_holder.warning(":cry: Invalid Ego roundabout activity. Enrich your descriptive text of scenarios.")
+            return False
 
+        if not check_activity(ego_roundabout_act, model['Ego Vehicle']['roundabout_activity']):
+            reminder_holder.warning(":cry: Invalid roundabout activity for Ego Vehicle. Enrich your descriptive text of scenarios.")
+            return False
     # -------------------------- Check the target vehicle ------------------------------
     # Check Target Vehicle activities and positions
     tgt_idx = 1
@@ -591,6 +654,23 @@ def validate_scenario(sample, reminder_holder, dataset_option):
                         else:
                             reminder_holder.warning(f"Invalid position type: {pos_type} for {target_vehicle}. Enrich your descriptive text of scenarios.")
                             return False
+
+            elif dataset_option == "rounD":
+                # Check Target roundabout activity
+                try:
+                    target_roundabout_act = details.get('roundabout_activity', '')
+                    if not target_roundabout_act:
+                        reminder_holder.warning(f":cry: Invalid roundabout activity for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                        return False
+                except AttributeError:
+                    reminder_holder.warning(f":cry: Invalid roundabout activity for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                    return False
+
+                if not check_activity(target_roundabout_act, model['Target Vehicle']['roundabout_activity']):
+                    reminder_holder.warning(f":cry: Invalid roundabout activity for {target_vehicle}. Enrich your descriptive text of scenarios.")
+                    return False
+
+
         else:
             reminder_holder.warning(":cry: Invalid Target Vehicle. Enrich your descriptive text of scenarios.")
             return False

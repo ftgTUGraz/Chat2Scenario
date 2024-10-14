@@ -36,6 +36,12 @@ import json
 from shapely.geometry import mapping
 import json
 from shapely.geometry import shape, Polygon
+import matplotlib.pyplot as plt
+from shapely.geometry import Polygon
+from matplotlib.patches import Polygon as MplPolygon
+from matplotlib.collections import PatchCollection
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 
 
 
@@ -403,7 +409,7 @@ def find_ax_limit(fictive_ego, fictive_targets,dataset_option):
         y_min = min(ego_y_min, fictive_target_y_min)
         y_max = max(ego_y_max, fictive_target_y_max)
 
-    elif dataset_option == "inD" or dataset_option == "exitD":  
+    elif dataset_option == "inD" or dataset_option == "exitD" or dataset_option == "rounD":  
         ego_x_min = min(fictive_ego['xCenter'])
         ego_x_max = max(fictive_ego['xCenter'])
         ego_y_min = min(fictive_ego['yCenter'])
@@ -639,9 +645,10 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
         # plot the playground
         if dataset_option == "inD":
             processor.plot_road_lane_paths(ax, road_lane_paths)
-        elif dataset_option == "exitD":
+        elif dataset_option == "exitD" :
             plot_polygons_from_json(json_data, ax)
-
+        elif dataset_option == "rounD":
+            plot_polygons_from_json_RounD(json_data, ax)
         elif dataset_option == "highD":
             match = re.search(r'\d+', file_path)
             if match:
@@ -673,7 +680,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
             ego_orientation = 0
             rect = plt.Rectangle((ego_x - ego_width / 2, ego_y - ego_height / 2), ego_width, ego_height, angle=ego_orientation, color='r', alpha=0.5)
             ax.add_patch(rect)
-        elif dataset_option == "inD" : 
+        elif dataset_option == "inD" or dataset_option == "rounD": 
             ego_width = fictive_ego_common['width'][i]
             ego_length = fictive_ego_common['length'][i]
             ax.plot(fictive_ego_common['xCenter'][:i], fictive_ego_common['yCenter'][:i], color = 'red', marker='.',linewidth=0.01, label='fictive ego')
@@ -710,7 +717,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
                 target_orientation = 0
                 rect = plt.Rectangle((target_x - target_width / 2, target_y - target_height / 2), target_width, target_height, angle=target_orientation, color='b', alpha=0.5)
                 ax.add_patch(rect)
-            elif dataset_option == "inD" : 
+            elif dataset_option == "inD" or dataset_option == "rounD": 
                 target_width = target_common['width'][i]
                 target_length = target_common['length'][i]
                 ax.plot(target_common['xCenter'][:i], target_common['yCenter'][:i], color = 'blue', marker='.',linewidth=10, label='fictive target')
@@ -763,7 +770,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
         reminder_holder.warning(f'Previewing {index}-th scenario.')
         if dataset_option == "highD":
             fictive_targets = fictive_target_dicts_sampled[fictive_ego['id'][0]]
-        elif dataset_option == "inD" or dataset_option == "exitD":   
+        elif dataset_option == "inD" or dataset_option == "exitD" or dataset_option == "rounD":   
             fictive_targets = fictive_target_dicts_sampled[fictive_ego['trackId'][0]] 
         #for fictive_target in fictive_targets:
         #    tgtId = fictive_target['id'][0]
@@ -1155,11 +1162,11 @@ def check_upload_csv(dataset_load, dataset_option):
     expected_format = []
     if dataset_option == "AD4CHE":
         expected_format = DJI_format
-    if dataset_option == "highD" or dataset_option == "roundD" or dataset_option == "uniD":
+    if dataset_option == "highD" or dataset_option == "uniD":
         expected_format = Aachen_format
-    elif dataset_option == "inD":
+    elif dataset_option == "inD" or dataset_option == "rounD":
         expected_format = Aachen_Ind_format
-    elif dataset_option == "exitD":
+    elif dataset_option == "exitD" :
         expected_format = Aachen_exitd_format
     
     # compare current and expected format
@@ -1201,5 +1208,51 @@ def plot_polygons_from_json(json_data, ax):
     ax.set_ylabel("Y Coordinate")
     ax.set_title("Visualization of Polygons")
     ax.legend()
+    ax.grid(True)
+    ax.axis('equal')
+
+
+def plot_polygons_from_json_RounD(lanes_polygons, ax):
+    """
+    绘制 RounD 数据集中的多边形车道。
+
+    参数：
+    - lanes_polygons (list): 包含 Shapely Polygon 对象的列表。
+    - ax (matplotlib.axes.Axes): 要绘制的 Matplotlib 轴。
+    """
+    # 创建颜色映射
+    colormap = cm.get_cmap('tab20')
+    color_norm = mcolors.Normalize(vmin=0, vmax=len(lanes_polygons) - 1)
+    scalar_map = cm.ScalarMappable(norm=color_norm, cmap=colormap)
+    
+    patches = []
+    for idx, polygon in enumerate(lanes_polygons):
+        # 获取多边形的外部坐标
+        coords = list(polygon.exterior.coords)
+        # 创建 Matplotlib 多边形补丁
+        mpl_polygon = MplPolygon(coords, closed=True)
+        patches.append(mpl_polygon)
+    
+    # 创建 PatchCollection
+    p = PatchCollection(patches, cmap=colormap, alpha=0.5)
+    # 设置颜色
+    colors = [scalar_map.to_rgba(i) for i in range(len(patches))]
+    p.set_facecolor(colors)
+    p.set_edgecolor('black')
+    
+    # 将补丁集合添加到轴上
+    ax.add_collection(p)
+    
+    # 设置轴的范围
+    all_coords = [list(poly.exterior.coords) for poly in lanes_polygons]
+    flat_coords = [coord for sublist in all_coords for coord in sublist]
+    x_coords = [c[0] for c in flat_coords]
+    y_coords = [c[1] for c in flat_coords]
+    ax.set_xlim(min(x_coords) - 10, max(x_coords) + 10)
+    ax.set_ylim(min(y_coords) - 10, max(y_coords) + 10)
+    
+    ax.set_xlabel('X Coordinate')
+    ax.set_ylabel('Y Coordinate')
+    ax.set_title('Visualization of rounD Polygons')
     ax.grid(True)
     ax.axis('equal')

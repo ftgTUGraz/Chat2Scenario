@@ -3,30 +3,30 @@ import pickle
 import streamlit as st
 # from utils.helper_original_scenario import *
 
-def intersection_judge(list1, list2):
+def intersection_judge(range1, range2):
     """
-    Judge if two lists have intersections
+    Judge if two ranges have intersections
 
     Parameters:
     -----------
     Inputs:
-    list1 (list): A list contains two values corresponding to a lower bound and a upper bound
-    list2 (list): A list contains two values corresponding to a lower bound and a upper bound
+    range1 (list): A list containing two values corresponding to a lower bound and an upper bound [start_frame, end_frame]
+    range2 (list): A list containing two values corresponding to a lower bound and an upper bound [start_frame, end_frame]
 
     Returns:
-    list: begin and end frame of the intersected
-    ----------
+    list: [begin_frame, end_frame] of the intersection if it exists, otherwise an empty list
     """
-    if len(list1) == 0 or len(list2) == 0:
-        return []
+    if len(range1) != 2 or len(range2) != 2:
+        raise ValueError("Both inputs should be ranges containing exactly two values [start_frame, end_frame]")
 
-    a, b = list1
-    c, d = list2
+    a, b = range1
+    c, d = range2
 
     if max(a, c) <= min(b, d):
         return [max(a, c), min(b, d)]
     else:
         return []
+
 
 
 def pos_calc(laneDiff, ego_drive_direction, delta_x_tgt_ego, req_tgt_type):

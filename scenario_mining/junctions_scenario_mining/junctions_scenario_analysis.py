@@ -44,7 +44,9 @@ class OpenDriveMapSelector:
         ----------
         DataFrame: A pandas DataFrame that includes updated track information with road and lane details along with activity types.
         """
+        #print(self.file_path)
         match = re.search(r'\d+', self.file_path.name)
+        #match = re.search(r'\d+', './01_tracks.csv')
         if match:
             index = int(match.group(0))
             if 0 <= index <= 6:
@@ -53,7 +55,6 @@ class OpenDriveMapSelector:
                 print(tracks_meta_df)
                 return tracks_meta_df
             elif 7 <= index <= 17:
-                print('12\n\n',self.file_path,'\n\n')
                 tracks_meta_df = bendplatz.BendplatzProcessor().update_tracks_with_lane_info(self.tracks_original)
                 tracks_meta_df = bendplatz.BendplatzProcessor().process_tracks(tracks_meta_df)
                 print(tracks_meta_df)

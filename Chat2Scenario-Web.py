@@ -35,6 +35,7 @@ matplotlib.use('Agg')  # or 'Qt5Agg', 'GTK3Agg', 'WXAgg', etc., depending on you
 import matplotlib.pyplot as plt
 import scenario_mining.exiD_scenario_mining.scenario_identification as scenario_identification
 from scenario_mining.exiD_scenario_mining.scenario_identification import *
+from scenario_mining.rounD_scenario_mining.scenario_identification import *
 
 # from API.Call_API import *
 
@@ -82,7 +83,7 @@ st.session_state.my_data['framerate'] = frame_rate
 st.markdown("<h1 style='text-align: center; font-weight:bold; font-family:comic sans ms; padding-top: 0rem;'>Chat2Scenario</h1>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; padding-top: 0rem;'>Scenario extraction from dataset through utilization of large language model</h2>", unsafe_allow_html=True)
 
-if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == "inD" or dataset_option == "exitD":
+if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == "inD" or dataset_option == "exitD" or dataset_option == "rounD":
     ## Check if uploaded data are correct
     csv_format = None
     if dataset_load is not None:
@@ -317,8 +318,69 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                         # Set the progress bar to 100% when finished
                         progress_bar.progress(100) 
                     
+                    elif dataset_option == "rounD":
+                        
+                        # Prepare Streamlit holders for UI elements
+                        reminder_holder = st.empty()
+                        animation_holder = st.empty()
 
-                # reminder_holder.write(st.session_state.my_data['desired_scenario'])
+                        # Load dataset and corresponding metadata
+                        tracks_original = pd.read_csv(dataset_load) 
+                        json_data, tracks_meta_df = OpenDriveMapSelector_RounD(dataset_load, tracks_original).select_opendrive_map()
+
+                        # Extract the key labels from the response for scenario identification
+
+                        # Identify roundabout scenarios based on the given key labels
+                        scenarioList = OpenDriveMapSelector_RounD.identify_junction_scenarios_optimized(tracks_meta_df, key_label)
+                        print("The following scenarios are in the scenario pool:")
+                        print(scenarioList)
+
+                        # Initialize lists for storing sampled data
+                        fictive_ego_list_sampled = []
+                        fictive_target_dicts_sampled = {}
+
+                        # Progress bar setup
+                        indexProgress = 0
+                        total_scenarios = len(scenarioList)
+                        progress_bar = st.progress(0)
+
+                        # Loop through the identified scenarios to gather ego and target vehicle data
+                        for scenario in scenarioList:
+                            ego_id = scenario[0]
+                            target_ids = scenario[1]
+                            begin_frame = scenario[2]
+                            end_frame = scenario[3]
+
+                            # Make sure target_ids is a list
+                            if isinstance(target_ids, int):
+                                target_ids = [target_ids]
+
+                            # Get ego vehicle data
+                            egoVehData = tracks_original[(tracks_original['trackId'] == ego_id) & 
+                                                        (tracks_original['frame'] >= begin_frame) & 
+                                                        (tracks_original['frame'] <= end_frame)].reset_index(drop=True)
+                            fictive_ego_list_sampled.append(egoVehData)
+
+                            # Get target vehicle data
+                            tgtVehsData = []
+                            for tgt_id in target_ids:
+                                tgtVehData = tracks_original[(tracks_original['trackId'] == tgt_id) & 
+                                                            (tracks_original['frame'] >= begin_frame) & 
+                                                            (tracks_original['frame'] <= end_frame)].reset_index(drop=True)
+                                tgtVehsData.append(tgtVehData)
+                            
+                            fictive_target_dicts_sampled[ego_id] = tgtVehsData
+                            if scenario not in st.session_state.my_data['desired_scenario']:
+                                    st.session_state.my_data['desired_scenario'].append(scenario)
+                                    
+                            # Update progress bar
+                            indexProgress += 1
+                            progress = int((indexProgress / total_scenarios) * 100)
+                            progress_bar.progress(progress)
+
+                        # Set progress bar to 100% when finished
+                        progress_bar.progress(100)
+               # reminder_holder.write(st.session_state.my_data['desired_scenario'])
 
                 
                 ## Scenario visualization
@@ -351,6 +413,10 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                     elif dataset_option == "exitD":
                         reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
                         preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load,json_data) 
+                    elif dataset_option == "rounD":
+                        reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
+                        preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load,json_data) 
+
                 else:
                     reminder_holder.warning("No scenarios are selected from the pool. Try to reset the criticality metric/value.")
                 

@@ -10,6 +10,8 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from io import BytesIO
 from PIL import Image
+from matplotlib.path import Path
+from map_data.InD_map_data.bendplatz_01_data import road_lane_paths_data   
 
 class BendplatzProcessor:
     def __init__(self):
@@ -375,11 +377,30 @@ class BendplatzProcessor:
         tracks_meta_df = csv_path
 
         # Process the OpenDRIVE file to get road and lane path data
-
+        np.set_printoptions(threshold=np.inf)
         # Load road and lane path data from a pickle file
+        '''
         file_path = 'map_data/InD_map_data/bendplatz_01.pkl'
-        self.road_lane_paths = BendplatzProcessor.load_road_lane_paths_pickle(file_path)    
         
+        try:
+            with open(file_path, 'rb') as file:
+                data = pickle.load(file)
+            
+            with open('map_data/InD_map_data/bendplatz_01_data.py', 'w', encoding='utf-8') as py_file:
+                py_file.write("import numpy as np\n")
+                py_file.write("from matplotlib.path import Path\n")
+                
+                data_str = repr(data).replace("array(", "np.array(").replace("dtype=uint8", "dtype=np.uint8")
+                py_file.write("road_lane_paths_data = ")
+                py_file.write(data_str)
+        except FileNotFoundError:
+            "File not found. Please check the path."
+        except Exception as e:
+            f"An error occurred: {e}"
+        '''
+        #self.road_lane_paths = BendplatzProcessor.load_road_lane_paths_pickle(file_path) 
+        self.road_lane_paths = road_lane_paths_data
+        #print(self.road_lane_paths)
         
         fig, ax = plt.subplots()
         BendplatzProcessor.plot_road_lane_paths(ax, self.road_lane_paths)
