@@ -105,13 +105,14 @@ def get_data(folder_path, csv_prefix):
     return recording_meta, tracks_meta, tracks
 
 
-def add_everything(object_track, entities, cataref, init, act, osc_minor_version):
+def add_everything(object_track, entities, cataref, init, act, osc_minor_version, heading=0):
     """
     create entity
 
     Args:
         object_track (dataframe): format of csv   
         entities, cataref, init, act: defined previously
+        heading (double): heading angle
     """
     # Determine the correct rule based on the OpenSCENARIO version
     condition_edge = xosc.ConditionEdge.none
@@ -134,7 +135,8 @@ def add_everything(object_track, entities, cataref, init, act, osc_minor_version
     else:
         object_track_orientation = 0
     init_pos = xosc.TeleportAction(xosc.WorldPosition(
-        object_track.iloc[0]['x'], object_track.iloc[0]['y'], 0, object_track_orientation, 0, 0))
+        # object_track.iloc[0]['x'], object_track.iloc[0]['y'], 0, object_track_orientation, 0, 0))
+        object_track.iloc[0]['x'], object_track.iloc[0]['y'], 0, heading, 0, 0))
     init.add_init_action(entityname, init_speed_act)
     init.add_init_action(entityname, init_pos)
 
@@ -163,7 +165,8 @@ def add_everything(object_track, entities, cataref, init, act, osc_minor_version
         else:
             object_track_orientation = 0
         position_list.append(xosc.WorldPosition(
-            object_track.iloc[i]['x'], object_track.iloc[i]['y'], 0, object_track_orientation, 0, 0))
+            # object_track.iloc[i]['x'], object_track.iloc[i]['y'], 0, object_track_orientation, 0, 0))
+            object_track.iloc[i]['x'], object_track.iloc[i]['y'], 0, heading, 0, 0))
 
     polyline = xosc.Polyline(time_list, position_list)
 
@@ -181,7 +184,7 @@ def add_everything(object_track, entities, cataref, init, act, osc_minor_version
     manGroup.add_maneuver(man)
     act.add_maneuver_group(manGroup)
 
-def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_version):
+def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_version, heading=0):
     """
     create xosc file
 
@@ -189,6 +192,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_versio
         sim_time (double): Duration of simulation time.
         ego_track (dataframe): Fictive ego vehicle track
         target_tracks_sampled (list): Fictive target vehicle track
+        heading (double): heading angle
     """
 
     # parameter + catalog + roadnetwork (independent on the number of entities)
@@ -223,7 +227,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_versio
     act = create_act(osc_minor_version)
 
     # ego
-    add_everything(ego_track, entities, cataref, init, act, osc_minor_version)
+    add_everything(ego_track, entities, cataref, init, act, osc_minor_version, heading)
 
     # target
     bb = xosc.BoundingBox(1.8, 4.5, 1.5, 1.3, 0, 0.8)
@@ -237,7 +241,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_versio
     red_veh.add_property("model_id", "2")
 
     for target_track_sampled in target_tracks_sampled:
-        add_everything(target_track_sampled, entities, red_veh, init, act, osc_minor_version)
+        add_everything(target_track_sampled, entities, red_veh, init, act, osc_minor_version, heading)
 
     # add act to story
     story.add_act(act)
