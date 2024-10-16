@@ -146,3 +146,18 @@ def create_xosc(entityname):
     trigger = xosc.ValueTrigger("start_event", 0, xosc.ConditionEdge.none, xosc.SimulationTimeCondition(0, xosc.Rule.greaterThan))
     return manGroup,man,event,trigger
     
+def calc_heading(oriTrackDf, egoTrack):
+    unique_lane_ids = oriTrackDf['laneId'].unique()
+    sorted_lane_ids = sorted(unique_lane_ids)
+    mid_point = len(sorted_lane_ids) // 2
+
+    first_half_lane_ids = sorted_lane_ids[:mid_point]
+    second_half_lane_ids = sorted_lane_ids[mid_point:]
+
+    ego_lane_id = egoTrack['laneId'].iloc[0]  # Assuming you take the first laneId from egoTracks
+    if ego_lane_id in first_half_lane_ids:
+        heading_angle = math.pi  # First half of the laneIds -> 180 degrees
+    elif ego_lane_id in second_half_lane_ids:
+        heading_angle = 0    # Second half of the laneIds -> 0 degrees
+    
+    return heading_angle

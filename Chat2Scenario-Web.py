@@ -8,6 +8,7 @@ import streamlit as st
 import pandas as pd
 from GUI.Web_Sidebar import *
 from utils.helper_original_scenario import generate_xosc
+from utils.helper_data_functions import calc_heading
 import time
 from GUI.Web_MainContent import *
 import sympy as sp
@@ -30,7 +31,6 @@ st.set_page_config(
 
 ### Sidebar
 dataset_option, metric_option, metric_suboption, dataset_load, metric_threshold, CA_Input, target_value = sidebar()
-
 
 ## global variables
 # how to make the ego and target trajectory into global variables: after preview, click extract
@@ -277,9 +277,12 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                     ego_track = egoVehTraj_common
                     tgt_tracks = tgtVehTrajs_common
                     
+                    # Calculate ego vehicle heading
+                    heading = calc_heading(oriTracksDf, ego_track)
+
                     if selected_opts == "xosc":
                         version_mapping = {'ASAM OpenSCENARIO V1.2.0': 2, 'ASAM OpenSCENARIO V1.1.0': 1, 'ASAM OpenSCENARIO V1.0.0': 0}
-                        pretty_xml_string = xosc_generation(sim_time, ego_track, tgt_tracks, version_mapping[selected_ver])
+                        pretty_xml_string = xosc_generation(sim_time, ego_track, tgt_tracks, version_mapping[selected_ver], heading)
                         xosc_files.append(pretty_xml_string)
                         
                     # if selected_opts == "txt":
