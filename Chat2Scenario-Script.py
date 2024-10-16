@@ -3,13 +3,9 @@ Author: Wenbo XIAO
 Date Created: 2024-10-13
 Copy Right: TU Graz FTG ADAS Group
 """
-
 import os
-import sys
 import json
 import pandas as pd
-import zipfile
-from io import BytesIO
 
 # Import custom modules
 from utils.helper_original_scenario import *
@@ -17,6 +13,7 @@ from NLP.Scenario_Description_Understand import *
 from scenario_mining.activity_identification import *
 from scenario_mining.scenario_identification import *
 from utils.prompt_engineering import *
+from utils.helper_data_functions import calc_heading
 
 NOW_TRACK_NUM = '01'
 NOW_LAT_ACT_DICT = {}
