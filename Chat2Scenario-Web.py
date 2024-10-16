@@ -211,8 +211,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                         fictive_tgt_dict[egoId] = tgtVehsData
                     anmation_holder = st.empty()
                     preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option)
-                # else:
-                #     reminder_holder.warning(":cry: No scenarios are selected from the pool. Try to reset the criticality metric/value or check the openai key.")
+                else:
+                    reminder_holder.warning(":cry: No scenarios are selected from the pool. Try to reset the criticality metric/value or check the openai key.")
 
         if extract_btn_meta:
             # List: [[egoVehID, [tgtVehID,...], startFrame, endFrame],[],[]...]
