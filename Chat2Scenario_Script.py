@@ -351,10 +351,17 @@ def process_scenario(config, metric_options, save_list = True, save_zip = False)
 
     # Scenario description using LLM
     print("Understanding scenario description using OpenAI LLM...")
-    key_label = get_scenario_classification_via_LLM(config['openai_key'], config['scenario_description'])
+    key_label = get_scenario_classification_via_LLM(
+        openai_key = config['openai_key'],
+        scenario_description = config['scenario_description'],
+        model = config['model'],
+        base_url = config['base_url']
+    )
     if not key_label:
         print("Failed to understand scenario description using LLM.")
         return
+    else:
+        print(f"Scenario description: {key_label}")
 
     # Load and analyze activity data
     track_num, longActDict, latActDict, interactIdDict = load_and_analyze_activity_data(config)

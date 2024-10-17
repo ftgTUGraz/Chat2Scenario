@@ -6,7 +6,7 @@ Email: yongqi.zhao@tugraz.at
 """
 import openai
 import json
-import openai.error
+from typing import Optional, Dict, Any
 
 ### Define framework to classify scenarios in functional level
 classification_framework = {
@@ -33,23 +33,40 @@ classification_framework = {
 
 
 ### Openai LLM to process human language of scenario description
-def LLM_process_scenario_description(openai_key, scenario_description, classification_framework):
+def LLM_process_scenario_description(
+    openai_key: str,
+    scenario_description: str,
+    classification_framework: Dict[str, Any],
+    model: Optional[str] = "gpt-4o-mini-2024-07-18",
+    base_url: Optional[str] = None
+) -> Optional[str]:
     """
-    Use the LLM to understand the scenario description and assign to the classification framework
+    Uses a Language Model (LLM) to understand a scenario description and classify it according to a provided framework.
 
-    Parameters:
+    Parameters
     ----------
-    Inputs:
-        openai_key (str): key of openai api
-        scenario_description (str): scenario description using human language in functional level from users 
-        classification_framework (str): pre-defined framework to classify the scenarios 
+    openai_key : str
+        API key for OpenAI.
+    scenario_description : str
+        Human-readable scenario description at the functional level from users.
+    classification_framework : dict
+        Pre-defined framework to classify the scenarios.
+    model : str, optional
+        Name of the model to use for the LLM, by default "gpt-4o-mini-2024-07-18".
+    base_url : str, optional
+        Base URL of the GPT-3 API, by default "https://api.openai.com/v1/".
 
-    Returns:
-        response of GPT [None, if error occurs]
-    ----------
+    Returns
+    -------
+    Optional[str]
+        The classification response from GPT, or `None` if an error occurs.
     """
+    
+    # Ensure classification_framework is a dictionary
+    if not isinstance(classification_framework, dict):
+        raise ValueError("classification_framework must be a dictionary.")
 
-    # Prompt design
+    # Prompt design using triple-quoted string for better readability
     prompt = f"System, you are an AI trained to understand and classify driving scenarios based on specific frameworks.Your task is to analyze the following driving scenario and classify the behavior of both the ego vehicle and the target vehicle according to the given classification framework. Please follow the framework strictly and provide precise and clear classifications. The framework is as follows:\n\n{json.dumps(classification_framework, indent=4)}\n\n"\
     "Scenario Description: \n"\
     f"'{scenario_description}'\n\n"\
@@ -90,23 +107,51 @@ def LLM_process_scenario_description(openai_key, scenario_description, classific
     "}\n\n"\
     "Remember to analyze carefully and provide the classification as per the structure given above."
 
-    # Assign openai key
-    openai.api_key = openai_key
+    client_kwargs = {
+        "api_key": openai_key
+    }
+    print(f"Using OpenAI API key: ****************{openai_key[-4:]}")
+
+    if base_url is not None:
+        client_kwargs["base_url"] = base_url
+        print(f"Using OpenAI base URL: {base_url}")
+
+    # Assign OpenAI API key
+    client = openai.OpenAI(**client_kwargs)
+
+    print(f"Using OpenAI model: {model}")
 
     try:
-        # Feed prompt to openai LLM
-        response = openai.ChatCompletion.create(
-            model="gpt-4-1106-preview",
+        # Make API call to OpenAI's ChatCompletion
+        response = client.chat.completions.create(
+            model=model,
             messages=[
-                {"role":"user", "content":prompt}])
-        return response["choices"][0]["message"]["content"]
-    except openai.error.AuthenticationError:
-        print("Warning: Invalid OpenAI API key.")
-        return None
-    except openai.error.OpenAIError as e:
-        print(f"An error occurred: {e}") 
-        return None
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0  # Set temperature to 0 for deterministic output
+        )
+        
+        # Extract and return the response content
+        return response.choices[0].message.content
     
+    except openai.AuthenticationError:
+        print("Error: Invalid OpenAI API key provided.")
+        return None
+    except openai.BadRequestError:
+        print("Error: Invalid request parameters provided.")
+        return None
+    except openai.RateLimitError:
+        print("Error: Rate limit exceeded. Please try again later.")
+        return None
+    except openai.OpenAIError as e:
+        print(f"An OpenAI error occurred: {e}")
+        return None
+    except KeyError:
+        print("Error: Unexpected response structure from OpenAI API.")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return None
 
 ### Process the GPT response
 def extract_json_from_response(response):
@@ -133,35 +178,78 @@ def extract_json_from_response(response):
         return None
 
 
-def get_scenario_classification_via_LLM(openai_key, scenario_description, progress_bar=None):
+def get_scenario_classification_via_LLM(
+    openai_key: str,
+    scenario_description: str,
+    progress_bar: Optional[Any] = None,
+    model: Optional[str] = None,
+    base_url: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """
-    get scenario classification from LLM
+    Obtain scenario classification from an LLM based on a provided classification framework.
 
-    Parameters:
+    Parameters
     ----------
-    Inputs:
-        openai_key (str): openai api key 
-        scenario_description (str): scenario description using human language in functional level from users 
-        progress_bar (st.progress(0)): progress bar in 0%
+    openai_key : str
+        OpenAI API key.
+    scenario_description : str
+        Scenario description using human language at the functional level from users.
+    progress_bar : Any, optional
+        Progress bar object (e.g., `st.progress(0)`), default is `None`.
+    model : str, optional
+        Name of the model to use for the LLM, default is `None` which lets the LLM use its default model.
+    base_url : str, optional
+        Base URL of the GPT API, default is `None` which uses OpenAI's default API endpoint.
 
-    Returns:
-        key labels in the format of json [None, if error occures]
-    ----------
+    Returns
+    -------
+    dict or None
+        Key labels in JSON format as a dictionary, or `None` if an error occurs.
     """
-    # Get response from LLM
+    # Update progress bar to 25% if provided
     if progress_bar is not None:
         progress_bar.progress(25)
 
-    response = LLM_process_scenario_description(openai_key, scenario_description, classification_framework)
+    try:
+        # Prepare arguments for LLM_process_scenario_description
+        llm_kwargs = {
+            "openai_key": openai_key,
+            "scenario_description": scenario_description,
+        }
+
+        if classification_framework is not None:
+            llm_kwargs["classification_framework"] = classification_framework
+        
+        # Include 'model' only if it's provided
+        if model is not None:
+            llm_kwargs["model"] = model
+        if base_url is not None:
+            llm_kwargs["base_url"] = base_url
+        
+        # Call the LLM processing function with appropriate arguments
+        response = LLM_process_scenario_description(**llm_kwargs)
     
+    except Exception as e:
+        print(f"An error occurred while processing the scenario description: {e}")
+        return None
+
+    # Update progress bar to 100% if provided
     if progress_bar is not None:
         progress_bar.progress(100)
-        
+
     if response is not None:
-        # Extract key labels
-        key_label = extract_json_from_response(response)
-        return key_label
+        try:
+            # Extract key labels from the LLM response
+            key_label = extract_json_from_response(response)
+            return key_label
+        except json.JSONDecodeError:
+            print("Error: Failed to parse the LLM response as JSON.")
+            return None
+        except KeyError:
+            print("Error: Unexpected response structure from the LLM.")
+            return None
     else:
+        print("Warning: Received no response from the LLM.")
         return None
 
 

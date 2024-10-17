@@ -79,8 +79,19 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
     # The first column
     with col1:
         # OpenAI API key
-        my_key = st.text_input(label = ":key: Enter your OpenAI key:", help="Please ensure you have an OpenAI API account with credit. ChatGPT Plus subscription does not include API access.", type="password")
-        # Dataset 
+        my_key = st.text_input(
+            label=":key: Enter your OpenAI key:",
+            help="Please ensure you have an OpenAI API account with credit. ChatGPT Plus subscription does not include API access.",
+            type="password"
+        )
+        # Base URL input
+        base_url_input = st.text_input(
+            label=":link: Enter the base URL for the OpenAI API:",
+            help="Please ensure the base URL is correct. If you are using the default URL, please leave it empty."
+        )
+        # Set base_url to None if input is empty or whitespace
+        base_url = base_url_input.strip() if base_url_input.strip() else None
+
         if dataset_option is not None:
             st.write(f":white_check_mark: Selected dataset: **{dataset_option}**")
         else:
@@ -133,7 +144,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 # Understand scenario using GPT
                 reminder_holder.warning(':thinking_face: Start understand scenario using LLM...')
                 progress_bar = st.progress(0)
-                key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar)
+                key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar, base_url=base_url)
                 st.session_state.my_data['key_label'] = key_label # add key_label to session state
                 print(key_label)
                 if key_label is None:
