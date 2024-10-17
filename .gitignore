@@ -5,3 +5,6 @@
 *.prof
 *.gif
 
+/output/
+
+*.pyc

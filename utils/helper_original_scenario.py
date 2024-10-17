@@ -192,6 +192,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_versio
         sim_time (double): Duration of simulation time.
         ego_track (dataframe): Fictive ego vehicle track
         target_tracks_sampled (list): Fictive target vehicle track
+        osc_minor_version (string): OpenSCENARIO version
         heading (double): heading angle
     """
 

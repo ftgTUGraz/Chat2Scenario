@@ -1,25 +1,46 @@
+import sys
+import os
+import concurrent.futures
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from Chat2Scenario_Script import process_scenario
+
+def threaded_process(config, metric_options):
+    """
+    Function to process a scenario configuration in a separate thread.
+    
+    Parameters:
+        config (dict): Configuration dictionary for the scenario.
+        metric_options (dict): Metric options to apply.
+    
+    Returns:
+        None
+    """
+    process_scenario(config, metric_options, save_list=True, save_zip=False)
 
 def main():
     """
-    Main function to execute multiple scenario processing based on predefined configurations.
+    Main function to execute multiple scenario processing using multithreading.
     """
-    # Define multiple configurations as a list of dictionaries, this is a config template
-    # some of the config options will be modified during for loop iterations
-    config = {
-            'name': 'Scenario 0',
-            'dataset_option': 'highD',
-            'dataset_path': '/home/boron/myProjects/crconverter/data/highD/data/01_tracks.csv',
-            'metric_option': 'Time-Scale',
-            'metric_suboption': 'Time To Collision (TTC)',
-            'metric_threshold': '1 - 15',
-            'CA_Input': None,
-            'target_value': None,
-            'openai_key': None,
-            'scenario_description': 'Ego vehicle is kepping its lane, target vehile is changing lane fron left to ego lane, and in front of ego vehilce, in the meanwhile, target vehicle is decelerating',
-            'output_dir': './output/'
-        }
+    # Define multiple configurations as a list of dictionaries
+    config_template = {
+        'name': 'Scenario 0',
+        'asam_version': 'ASAM OpenSCENARIO V1.2.0',
+        'dataset_option': 'highD',
+        'dataset_path': '',  # This will be updated dynamically for each track_num
+        'metric_option': 'Time-Scale',
+        'metric_suboption': 'Time To Collision (TTC)',
+        'metric_threshold': '1 - 15',
+        'CA_Input': None,
+        'target_value': None,
+        'openai_key': None, # modify this to your OpenAI API key
+        'scenario_description': '',  # This will be updated dynamically
+        'output_dir': './output/'
+    }
 
-    track_nums = ['01',]
+    # generate tracknums from 01 - 60
+    track_nums = [f'{i:02}' for i in range(1, 11)]
     scenario_descriptions = [
         "1. The ego vehicle is driving straight in the ego lane, and the target vehicle ahead changes lanes to the left adjacent lane.",
         "2. The ego vehicle is accelerating in the ego lane, and the target vehicle ahead changes lanes to the left adjacent lane.",
@@ -97,22 +118,48 @@ def main():
         "74. The ego vehicle changes lanes to the left lane, and a vehicle in the left lane changes to the ego lane ahead of the ego vehicle."
     ] 
     metric_options = {
-        'Distance-Scale': 
-        {'Distance Headway (DHW)': '1 - 50'},
+        # 'Distance-Scale': 
+        # {'Distance Headway (DHW)': '1 - 80'},
         # 'Jerk-Scale': 
         # {'Longitudinal jerk (LongJ)': '1 - 15',
-        #  'Lateral jerk (LatJ)': '1 - 15'},
+        # #  'Lateral jerk (LatJ)': '1 - 15'},
         'Time-Scale': 
-        {'Time To Collision (TTC)': '1 - 15',
-         'Time Headway (THW)': '1 - 5'},
+        {'Time To Collision (TTC)': '1 - 10',
+         'Time Headway (THW)': '1 - 2'},
     }
-    
-    # Iterate over each configuration and process the scenario
-    for track_num in track_nums:
-        for scenario_description in scenario_descriptions:
-            config['dataset_path'] = f'/home/boron/myProjects/crconverter/data/highD/data/{track_num}_tracks.csv'
-            config['scenario_description'] = scenario_description
-            # process_scenario(config, metric_options)
+
+    # for track_num in track_nums:
+    #     for scenario_description in scenario_descriptions:
+    #         # Update config with dynamic fields
+    #         config = config_template.copy()
+    #         config['dataset_path'] = f'/home/boron/myProjects/crconverter/data/highD/data/{track_num}_tracks.csv'
+    #         config['scenario_description'] = scenario_description
+            
+    #         # Process the scenario
+    #         process_scenario(config, metric_options, save_list=True, save_zip=True)
+
+
+    # Use ThreadPoolExecutor for multithreading
+    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
+        futures = []
+        
+        # Iterate over each track number and scenario description
+        for track_num in track_nums:
+            for scenario_description in scenario_descriptions:
+                # Update config with dynamic fields
+                config = config_template.copy()
+                config['dataset_path'] = f'/home/boron/myProjects/crconverter/data/highD/data/{track_num}_tracks.csv'
+                config['scenario_description'] = scenario_description
+                
+                # Submit the scenario processing task to the thread pool
+                futures.append(executor.submit(threaded_process, config, metric_options))
+        
+        # Wait for all futures to complete and handle exceptions
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()  # This will raise any exception from the thread
+            except Exception as exc:
+                print(f"Scenario processing generated an exception: {exc}")
 
 if __name__ == '__main__':
     main()
