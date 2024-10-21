@@ -53,10 +53,21 @@ class Playground0:
             transformed_coords.append((local_x, local_y))
         return transformed_coords
 
-    def read_tracks(self, file_path):
+    def read_tracks(self, file_obj):
         tracks = []
-        
-        with open(file_path, 'r') as csvfile:
+        '''
+        # Use io.StringIO to convert the contents of the file into a stream of strings
+        file_content = io.StringIO(file_obj.read().decode('utf-8'))  # 假设文件编码为 UTF-8
+        reader = csv.DictReader(file_content)
+
+        for row in reader:
+            track_id = int(row['trackId'])
+            x_center = float(row['xCenter'])
+            y_center = float(row['yCenter'])
+            tracks.append((track_id, x_center, y_center, row))  
+        '''      
+        '''
+        with open(file_obj, 'r') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
                 track_id = int(row['trackId'])
@@ -64,6 +75,11 @@ class Playground0:
                 y_center = float(row['yCenter'])
                 tracks.append((track_id, x_center, y_center, row))
         return tracks
+        '''
+        df = pd.read_csv(file_obj)
+
+        return df
+        
 
     def get_lane_id(self, point):
         for lane_id, polygons in self.lane_polygons.items():
@@ -201,6 +217,53 @@ class Playground0:
             self.lane_polygons[lane_id] = polygons
 
     def update_track_file(self, tracks_file):
+        # 重置文件指针到文件开头
+        #tracks_file.seek(0)
+        
+        # 打印文件内容进行调试（可选）
+        #content = tracks_file.read()
+        #print(content)
+        #tracks_file.seek(0)
+
+        # 使用 pandas 读取 CSV 文件
+        df = pd.read_csv(tracks_file)
+
+        # 初始化新列 'laneId' 和 'activity_type'
+        df['laneId'] = None
+        df['activity_type'] = None
+
+        # 构建包含 DataFrame 索引的 track_lane_sequences
+        track_lane_sequences = {}
+        for index, row in df.iterrows():
+            x_center = float(row['xCenter'])
+            y_center = float(row['yCenter'])
+            point = Point(x_center, y_center)
+
+            # 确定 lane_id
+            lane_id = self.get_lane_id(point)
+
+            # 将 (index, lane_id) 存储到 track_lane_sequences
+            track_id = row['trackId']
+            if track_id not in track_lane_sequences:
+                track_lane_sequences[track_id] = []
+            track_lane_sequences[track_id].append((index, lane_id))
+
+            # 更新 DataFrame 的 'laneId' 列
+            df.at[index, 'laneId'] = lane_id
+
+        # 为每个 track_id 确定 activity_type
+        for track_id, index_lane_list in track_lane_sequences.items():
+            lane_sequence = [lane_id for idx, lane_id in index_lane_list]
+            simplified_sequence = self.simplify_lane_sequence(lane_sequence)
+            for i, (idx, lane_id) in enumerate(index_lane_list):
+                if lane_id is not None:
+                    activity_type = self.determine_roundabout_activity(lane_id, lane_sequence, i)
+                    df.at[idx, 'activity_type'] = activity_type
+
+        return df
+
+
+        '''
         # Read the track data
         tracks = self.read_tracks(tracks_file)
         track_lane_sequences = {}
@@ -215,41 +278,45 @@ class Playground0:
 
         updated_tracks = []
         
+        tracks_file.seek(0)
+        file_content = io.StringIO(tracks_file.read().decode('utf-8'))
         # Read the original track data
-        with open(tracks_file, 'r') as csvfile:
-            reader = csv.DictReader(csvfile)
-            fieldnames = reader.fieldnames + ['laneId', 'activity_type']
+        #with open(tracks_file, 'r') as csvfile:
+            #reader = csv.DictReader(csvfile)
+        reader = csv.DictReader(file_content)
+        fieldnames = reader.fieldnames + ['laneId', 'activity_type']
+        
+        index = 0
+        last_track_id = 0
+        
+        for row in reader:
+            track_id = int(row['trackId'])
             
-            index = 0
-            last_track_id = 0
+            # Reset the index when track_id changes
+            if last_track_id != track_id:
+                index = 0
+                last_track_id = track_id
             
-            for row in reader:
-                track_id = int(row['trackId'])
+            # Add laneId and activity_type columns based on track_lane_sequences
+            if track_id in track_lane_sequences:
+                lane_sequence = self.simplify_lane_sequence(track_lane_sequences[track_id])
                 
-                # Reset the index when track_id changes
-                if last_track_id != track_id:
-                    index = 0
-                    last_track_id = track_id
+                if index < len(track_lane_sequences[track_id]):
+                    row['laneId'] = track_lane_sequences[track_id][index]
+                    index += 1
                 
-                # Add laneId and activity_type columns based on track_lane_sequences
-                if track_id in track_lane_sequences:
-                    lane_sequence = self.simplify_lane_sequence(track_lane_sequences[track_id])
-                    
-                    if index < len(track_lane_sequences[track_id]):
-                        row['laneId'] = track_lane_sequences[track_id][index]
-                        index += 1
-                    
-                    lane_sequence = [lane for lane in lane_sequence if lane is not None]
-                    row['activity_type'] = self.determine_roundabout_activity(row['laneId'], track_lane_sequences[track_id], index)
+                lane_sequence = [lane for lane in lane_sequence if lane is not None]
+                row['activity_type'] = self.determine_roundabout_activity(row['laneId'], track_lane_sequences[track_id], index)
 
-                else:
-                    row['laneId'] = None
-                    row['activity_type'] = None
-                
-                updated_tracks.append(row)
+            else:
+                row['laneId'] = None
+                row['activity_type'] = None
+            
+            updated_tracks.append(row)
 
         # Convert updated_tracks to a pandas DataFrame
         updated_tracks_df = pd.DataFrame(updated_tracks, columns=fieldnames)
         
         # Return the DataFrame
         return updated_tracks_df
+        '''

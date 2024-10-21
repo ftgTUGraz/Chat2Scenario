@@ -16,7 +16,7 @@ import matplotlib.animation as animation
 import sys
 import argparse
 from loguru import logger
-
+from matplotlib.lines import Line2D
 from src.track_visualizer import TrackVisualizer, DataError
 from src.tracks_import import read_from_csv
 from src.run_track_visualization import *
@@ -362,7 +362,7 @@ def process_equation(equation_input):
     return parased_equation_code
     
 
-def find_ax_limit(fictive_ego, fictive_targets,dataset_option):
+def find_ax_limit(fictive_ego, fictive_targets,dataset_option, json_data):
     """
     find the limitation to fix figure axis 
 
@@ -376,6 +376,10 @@ def find_ax_limit(fictive_ego, fictive_targets,dataset_option):
         y_min (float): y minimum
         y_max (float): y maximum
     """
+    # Initialize default values for axis limits
+    x_min, x_max = float('inf'), float('-inf')
+    y_min, y_max = float('inf'), float('-inf')
+
     if dataset_option == "highD":
         ego_x_min = min(fictive_ego['x'])
         ego_x_max = max(fictive_ego['x'])
@@ -409,7 +413,8 @@ def find_ax_limit(fictive_ego, fictive_targets,dataset_option):
         y_min = min(ego_y_min, fictive_target_y_min)
         y_max = max(ego_y_max, fictive_target_y_max)
 
-    elif dataset_option == "inD" or dataset_option == "exitD" or dataset_option == "rounD":  
+    elif dataset_option == "inD" or dataset_option == "exitD" :  
+          
         ego_x_min = min(fictive_ego['xCenter'])
         ego_x_max = max(fictive_ego['xCenter'])
         ego_y_min = min(fictive_ego['yCenter'])
@@ -425,6 +430,20 @@ def find_ax_limit(fictive_ego, fictive_targets,dataset_option):
         y_min = min(ego_y_min, tgt_y_min)
         y_max = max(ego_y_max, tgt_y_max)
         
+    elif dataset_option == "rounD": 
+
+        # Extract coordinates from Polygon objects in json_data
+        all_coords = [list(polygon.exterior.coords) for polygon in json_data]
+        flat_coords = [coord for sublist in all_coords for coord in sublist]
+        x_coords = [c[0] for c in flat_coords]
+        y_coords = [c[1] for c in flat_coords]
+
+        # Update the axis limits with the map boundaries
+        x_min = min(x_min, min(x_coords))
+        x_max = max(x_max, max(x_coords))
+        y_min = min(y_min, min(y_coords))
+        y_max = max(y_max, max(y_coords))
+
     return x_min, x_max, y_min, y_max
 
 
@@ -680,7 +699,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
             ego_orientation = 0
             rect = plt.Rectangle((ego_x - ego_width / 2, ego_y - ego_height / 2), ego_width, ego_height, angle=ego_orientation, color='r', alpha=0.5)
             ax.add_patch(rect)
-        elif dataset_option == "inD" or dataset_option == "rounD": 
+        elif dataset_option == "inD" : 
             ego_width = fictive_ego_common['width'][i]
             ego_length = fictive_ego_common['length'][i]
             ax.plot(fictive_ego_common['xCenter'][:i], fictive_ego_common['yCenter'][:i], color = 'red', marker='.',linewidth=0.01, label='fictive ego')
@@ -688,10 +707,11 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
             ego_y = fictive_ego_common['yCenter'][i]
             ego_orientation = fictive_ego_common['heading'][i] 
             plot_vehicle(ax, ego_x, ego_y, ego_width, ego_length, ego_orientation, color='red') 
-        elif dataset_option == "exitD": 
+        elif dataset_option == "exitD" or dataset_option == "rounD": 
             ego_width = fictive_ego_common['width'][i]
             ego_length = fictive_ego_common['length'][i]
             #ax.plot(fictive_ego_common['xCenter'][:i], fictive_ego_common['yCenter'][:i], color = 'red', marker='.', label='fictive ego')
+            ax.add_line(Line2D([0], [0], color='none', label='fictive ego'))
             ego_x = fictive_ego_common['xCenter'][i]
             ego_y = fictive_ego_common['yCenter'][i]
             ego_orientation = fictive_ego_common['heading'][i] 
@@ -717,18 +737,19 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
                 target_orientation = 0
                 rect = plt.Rectangle((target_x - target_width / 2, target_y - target_height / 2), target_width, target_height, angle=target_orientation, color='b', alpha=0.5)
                 ax.add_patch(rect)
-            elif dataset_option == "inD" or dataset_option == "rounD": 
+            elif dataset_option == "inD" : 
                 target_width = target_common['width'][i]
                 target_length = target_common['length'][i]
-                ax.plot(target_common['xCenter'][:i], target_common['yCenter'][:i], color = 'blue', marker='.',linewidth=10, label='fictive target')
+                ax.plot(target_common['xCenter'][:i], target_common['yCenter'][:i], color = 'blue', marker='.',linewidth=0.01, label='fictive target')
                 target_x = target_common['xCenter'][i]
                 target_y = target_common['yCenter'][i]
                 target_orientation = target_common['heading'][i] 
                 plot_vehicle(ax, target_x, target_y, target_width, target_length, target_orientation, color='red') 
-            elif dataset_option == "exitD": 
+            elif dataset_option == "exitD" or dataset_option == "rounD": 
                 target_width = target_common['width'][i]
                 target_length = target_common['length'][i]
                 #ax.plot(target_common['xCenter'][:i], target_common['yCenter'][:i], color = 'blue', marker='.', label='fictive target')
+                ax.add_line(Line2D([0], [0], color='none', label='fictive target'))
                 target_x = target_common['xCenter'][i]
                 target_y = target_common['yCenter'][i]
                 target_orientation = target_common['heading'][i] 
@@ -755,6 +776,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
         ax.set_ylabel('Y')
         current_time = (fictive_ego_common['frame'][i]-fictive_ego_common['frame'][0])/frame_rate
         ax.set_title(f'Time: {current_time}s')
+        
         ax.legend(loc='upper right', bbox_to_anchor=(1, 3))
 
     ## start preview process
@@ -803,7 +825,7 @@ def preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, rem
             fictive_targets_common.append(fictive_target_common)
 
 
-        x_min, x_max, y_min, y_max = find_ax_limit(fictive_ego_common, fictive_targets_common,dataset_option)
+        x_min, x_max, y_min, y_max = find_ax_limit(fictive_ego_common, fictive_targets_common,dataset_option, json_data)
         fig, ax = plt.subplots(figsize=(7,3))
         ani = animation.FuncAnimation(fig, animate, frames=len(fictive_ego_common), repeat=True, interval=1000)
         ani.save("animation.gif", writer='pillow', fps=25)

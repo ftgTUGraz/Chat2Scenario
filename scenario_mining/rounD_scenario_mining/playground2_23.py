@@ -12,7 +12,7 @@ class Playground2_23:
     def __init__(self):
         self.lane_polygons = {}
         # 遍历 RounD_data 中的 polygons 并根据需要的 lane_id 进行关联
-        for i, polygon in enumerate(RounD_data.lanes_polygons1):
+        for i, polygon in enumerate(RounD_data.lanes_polygons2_23):
             # 根据 RounD_data 中的顺序设置 lane_id
             if i == 0:
                 lane_id = 1  # 第一组多边形数据对应 lane_id = 1
@@ -177,6 +177,52 @@ class Playground2_23:
             self.lane_polygons[lane_id] = polygons
 
     def update_track_file(self, tracks_file):
+        # 重置文件指针到文件开头
+        tracks_file.seek(0)
+        
+        # 打印文件内容进行调试（可选）
+        #content = tracks_file.read()
+        #print(content)
+        #tracks_file.seek(0)
+
+        # 使用 pandas 读取 CSV 文件
+        df = pd.read_csv(tracks_file)
+
+        # 初始化新列 'laneId' 和 'activity_type'
+        df['laneId'] = None
+        df['activity_type'] = None
+
+        # 构建包含 DataFrame 索引的 track_lane_sequences
+        track_lane_sequences = {}
+        for index, row in df.iterrows():
+            x_center = float(row['xCenter'])
+            y_center = float(row['yCenter'])
+            point = Point(x_center, y_center)
+
+            # 确定 lane_id
+            lane_id = self.get_lane_id(point)
+
+            # 将 (index, lane_id) 存储到 track_lane_sequences
+            track_id = row['trackId']
+            if track_id not in track_lane_sequences:
+                track_lane_sequences[track_id] = []
+            track_lane_sequences[track_id].append((index, lane_id))
+
+            # 更新 DataFrame 的 'laneId' 列
+            df.at[index, 'laneId'] = lane_id
+
+        # 为每个 track_id 确定 activity_type
+        for track_id, index_lane_list in track_lane_sequences.items():
+            lane_sequence = [lane_id for idx, lane_id in index_lane_list]
+            simplified_sequence = self.simplify_lane_sequence(lane_sequence)
+            for i, (idx, lane_id) in enumerate(index_lane_list):
+                if lane_id is not None:
+                    activity_type = self.determine_roundabout_activity(lane_id, lane_sequence, i)
+                    df.at[idx, 'activity_type'] = activity_type
+
+        return df
+    '''
+    def update_track_file(self, tracks_file):
         # Read the track data
         tracks = self.read_tracks(tracks_file)
         track_lane_sequences = {}
@@ -216,7 +262,7 @@ class Playground2_23:
                         index += 1
                     
                     lane_sequence = [lane for lane in lane_sequence if lane is not None]
-                    row['activity_type'] = self.determine_activity_type(lane_sequence)
+                    row['activity_type'] = self.determine_roundabout_activity(row['laneId'], track_lane_sequences[track_id], index)
                 else:
                     row['laneId'] = None
                     row['activity_type'] = None
@@ -230,3 +276,4 @@ class Playground2_23:
         return updated_tracks_df
     def reload_RounD_data(self):
         importlib.reload(RounD_data)
+    '''
