@@ -108,4 +108,4 @@ for scenario in scenarioList:
     fictive_target_dicts_sampled[ego_id] = tgtVehsData
 
 
-preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load)
+preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load,[])

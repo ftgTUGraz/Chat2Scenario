@@ -200,6 +200,11 @@ class TrackDataProcessor:
         DataFrame: Updated DataFrame with turn type and lane ID
         """
         df = pd.read_csv(input_file)
+        #df_origin = pd.read_csv(input_file)
+        #unique_frames = sorted(df_origin['frame'].unique())
+        #consistent_frames = unique_frames[::25]
+
+        #df = df_origin[df_origin['frame'].isin(consistent_frames)].reset_index(drop=True)  
 
         for index, row in df.iterrows():
             x_center = float(row['xCenter'])

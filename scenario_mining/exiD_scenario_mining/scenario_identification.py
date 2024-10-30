@@ -86,6 +86,7 @@ class ScenarioIdentification:
         fig, ax = plt.subplots()
         # Extract the number from the file name
         match = re.search(r'\d+', file_path.name)
+        #match = re.search(r'\d+', './39_tracks.csv')
         if match:
             index = int(match.group(0))
             # Select the corresponding playground module based on different number ranges

@@ -206,7 +206,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                                 progress_bar.progress(100)                        
                     elif dataset_option == "inD":
                         
-                        animation_holder = st.empty()
+                        #animation_holder = st.empty()
 
                         tracks_original = pd.read_csv(dataset_load) 
 
@@ -263,7 +263,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                                             
                     elif dataset_option == "exitD":
                         
-                        animation_holder = st.empty()
+                        #animation_holder = st.empty()
                         scenario_identification = ScenarioIdentification()
                         #tracks_original = pd.read_csv(dataset_load) 
                         json_data,updated_tracks_df =  scenario_identification.select_playground(dataset_load)
@@ -320,20 +320,24 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                     
                     elif dataset_option == "rounD":
                         
-                        # Prepare Streamlit holders for UI elements
-                        reminder_holder = st.empty()
-                        animation_holder = st.empty()
-
+                        reminder_holder.warning(':mag: Loading dataset...')
                         # Load dataset and corresponding metadata
-                        tracks_original = pd.read_csv(dataset_load) 
-                        json_data, tracks_meta_df = OpenDriveMapSelector_RounD(dataset_load, tracks_original).select_opendrive_map()
+                        tracks_original = pd.read_csv(dataset_load)
+                        
+                        unique_frames = sorted(tracks_original['frame'].unique())
+                        consistent_frames = unique_frames[::25]
+
+                        tracks_consistent = tracks_original[tracks_original['frame'].isin(consistent_frames)].reset_index(drop=True)
+
+                        json_data, tracks_meta_df = OpenDriveMapSelector_RounD(dataset_load, tracks_consistent).select_opendrive_map()
 
                         # Extract the key labels from the response for scenario identification
-
+                        reminder_holder.warning(':mag: Start search desired scenarios...')
                         # Identify roundabout scenarios based on the given key labels
                         scenarioList = OpenDriveMapSelector_RounD.identify_junction_scenarios_optimized(tracks_meta_df, key_label)
                         print("The following scenarios are in the scenario pool:")
                         print(scenarioList)
+                        reminder_holder.warning(f"{len(scenarioList)} scenarios are found. Start calculate metric values...")
 
                         # Initialize lists for storing sampled data
                         fictive_ego_list_sampled = []
@@ -342,7 +346,6 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                         # Progress bar setup
                         indexProgress = 0
                         total_scenarios = len(scenarioList)
-                        progress_bar = st.progress(0)
 
                         # Loop through the identified scenarios to gather ego and target vehicle data
                         for scenario in scenarioList:
@@ -380,6 +383,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
 
                         # Set progress bar to 100% when finished
                         progress_bar.progress(100)
+                        reminder_holder.success('Scenario analysis and selection complete.')
                # reminder_holder.write(st.session_state.my_data['desired_scenario'])
 
                 
@@ -408,12 +412,15 @@ if dataset_option == "highD" or dataset_option == "AD4CHE" or dataset_option == 
                         anmation_holder = st.empty()
                         preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option,dataset_load,[])
                     elif dataset_option == "inD" :
+                        animation_holder = st.empty()
                         reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
                         preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load,[]) 
                     elif dataset_option == "exitD":
+                        animation_holder = st.empty()
                         reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
                         preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load,json_data) 
                     elif dataset_option == "rounD":
+                        animation_holder = st.empty()
                         reminder_holder.warning(f"{num_sce} scenarios are selected from the pool. Start to visualize...")
                         preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, dataset_option,dataset_load,json_data) 
 

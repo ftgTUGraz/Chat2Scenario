@@ -46,7 +46,7 @@ class OpenDriveMapSelector:
         """
         #print(self.file_path)
         match = re.search(r'\d+', self.file_path.name)
-        #match = re.search(r'\d+', './01_tracks.csv')
+        #match = re.search(r'\d+', './08_tracks.csv')
         if match:
             index = int(match.group(0))
             if 0 <= index <= 6:

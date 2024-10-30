@@ -42,6 +42,7 @@ import json
 from shapely.geometry import shape, Polygon
 from scenario_mining.exiD_scenario_mining.scenario_identification import *
 
+start_time = time.time()
 
 file_path = '39_tracks.csv'
 
@@ -207,7 +208,8 @@ longActDict, latActDict, interactIdDict = main_fcn_veh_activity(updated_tracks_d
 scenarioList = scenario_identification.mainFunctionScenarioIdentification_ExitD(updated_tracks_df, key_label, latActDict, longActDict, interactIdDict, progress_bar,file_path)
 print(scenarioList)     
 
-
+optimized_time = time.time() - start_time
+print(f"optimized_time: {optimized_time:.2f} seconds")
 
 #scenarioList = [[81, [82], 2621, 2992], [164, [166], 6365, 6777], [886, [885], 32879, 33252]]
 

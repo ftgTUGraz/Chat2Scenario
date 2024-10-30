@@ -27,6 +27,7 @@ import matplotlib
 matplotlib.use('TkAgg')  # Or 'Qt5Agg', 'GTK3Agg', 'WXAgg', etc., depending on your system configuration
 import matplotlib.pyplot as plt
 
+start_time = time.time()
 
 dataset_option = 'inD'
 metric_option = {"Time-Scale": ["Encroachment Time (ET)", "Post-encroachment Time (PET)", "Potential Time To Collision (PTTC)", \
@@ -43,8 +44,15 @@ reminder_holder = st.empty()
 animation_holder = st.empty()
 
 tracks_original = pd.read_csv(dataset_load) 
+
+unique_frames = sorted(tracks_original['frame'].unique())
+consistent_frames = unique_frames[::25]
+
+
+tracks_consistent = tracks_original[tracks_original['frame'].isin(consistent_frames)].reset_index(drop=True)
+
 #tracks_meta_df = OpenDriveMapSelector(dataset_load).select_opendrive_map()
-tracks_meta_df = OpenDriveMapSelector(dataset_load,tracks_original).select_opendrive_map()
+tracks_meta_df = OpenDriveMapSelector(dataset_load,tracks_consistent).select_opendrive_map()
 response1 = """
 {
     'Ego Vehicle': 
@@ -204,6 +212,9 @@ key_label = extract_json_from_response(response1)
 scenarioList = OpenDriveMapSelector.identify_junction_scenarios_optimized(tracks_meta_df, key_label)
 print(scenarioList)
 
+optimized_time = time.time() - start_time
+print(f"optimized_time: {optimized_time:.2f} seconds")
+
 fictive_ego_list_sampled = []
 fictive_target_dicts_sampled = {}
 
@@ -234,5 +245,5 @@ for scenario in scenarioList:
     fictive_target_dicts_sampled[ego_id] = tgtVehsData
 
 # Now call the preview function
-preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, "inD",dataset_load)
+preview_scenario(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, "inD",dataset_load,[])
 #preview_scenario_new(fictive_ego_list_sampled, fictive_target_dicts_sampled, reminder_holder, animation_holder, "inD")
