@@ -4,6 +4,8 @@
 *.json
 *.prof
 *.gif
+*.pyc
+*.gif
 
 /output/
 
