@@ -25,9 +25,16 @@ def process_json_file(filepath, scenario_keys=None):
             if len(entry) > 1:
                 ego_id = entry[0]
                 target_id_list = entry[1]
+                start_frame = entry[2]
+                end_frame = entry[3]
+
+                # Skip scenarios with less than 30 frames
+                if end_frame - start_frame < 30:
+                    continue
+
                 # Store the tuple of ego_id and target_id
                 for target_id in target_id_list:
-                    unique_scenarios.add((ego_id, target_id))
+                    unique_scenarios.add((ego_id, target_id, start_frame, end_frame))
     
     # Return dataset_type, track_num, and the filtered scenarios
     return dataset_type, track_num, unique_scenarios
@@ -85,7 +92,7 @@ if not os.path.exists(output_folder):
 combined_results = defaultdict(lambda: {"scenarios": set(), "ego_ids": set()})
 
 # Process all files in the folder, passing the optional scenario_keys parameter
-scenario_keys = ["Time To Collision"]  # Pass this as a filter, or set to None to process all
+scenario_keys = ["Time To Collision", "Time Headway", 'Longitudinal jerk (LongJ)', "Deceleration to safety time (DST)"]  # Pass this as a filter, or set to None to process all
 for filename in os.listdir(input_folder):
     if filename.endswith(".json"):
         file_path = os.path.join(input_folder, filename)
@@ -93,7 +100,7 @@ for filename in os.listdir(input_folder):
         
         # Update the combined results for the same dataset_type and track_num
         combined_results[(dataset_type, track_num)]["scenarios"].update(unique_scenarios)
-        combined_results[(dataset_type, track_num)]["ego_ids"].update(ego_id for ego_id, _ in unique_scenarios)
+        combined_results[(dataset_type, track_num)]["ego_ids"].update(ego_id for ego_id, _, _, _ in unique_scenarios)
 
 # Save each track's processed scenarios into a separate JSON file
 for (dataset_type, track_num), data in combined_results.items():
@@ -101,7 +108,7 @@ for (dataset_type, track_num), data in combined_results.items():
         "dataset_type": dataset_type,
         "track_num": track_num,
         "ego_ids": list(data["ego_ids"]),
-        "scenarios": [{"ego_id": ego_id, "target_id": target_id} for ego_id, target_id in data["scenarios"]],
+        "scenarios": [{"ego_id": ego_id, "target_id": target_id} for ego_id, target_id, _, _ in data["scenarios"]],
     }
     
     # Define the output file name for each track
