@@ -1,7 +1,11 @@
 *.m
 *.xlsx
 *.pptx
-*.json
 *.prof
 *.gif
+*.pyc
+*.gif
 
+/output/
+
+*.pyc

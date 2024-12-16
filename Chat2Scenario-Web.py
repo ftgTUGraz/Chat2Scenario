@@ -7,7 +7,7 @@ Email: yongqi.zhao@tugraz.at
 import streamlit as st
 import pandas as pd
 from GUI.Web_Sidebar import *
-from utils.helper_original_scenario import generate_xosc
+from utils.helper_original_scenario import generate_xosc, convert_to_native
 from utils.helper_data_functions import calc_heading
 import time
 from GUI.Web_MainContent import *
@@ -79,8 +79,19 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
     # The first column
     with col1:
         # OpenAI API key
-        my_key = st.text_input(label = ":key: Enter your OpenAI key:", help="Please ensure you have an OpenAI API account with credit. ChatGPT Plus subscription does not include API access.", type="password")
-        # Dataset 
+        my_key = st.text_input(
+            label=":key: Enter your OpenAI key:",
+            help="Please ensure you have an OpenAI API account with credit. ChatGPT Plus subscription does not include API access.",
+            type="password"
+        )
+        # Base URL input
+        base_url_input = st.text_input(
+            label=":link: Enter the base URL for the OpenAI API:",
+            help="Please ensure the base URL is correct. If you are using the default URL, please leave it empty."
+        )
+        # Set base_url to None if input is empty or whitespace
+        base_url = base_url_input.strip() if base_url_input.strip() else None
+
         if dataset_option is not None:
             st.write(f":white_check_mark: Selected dataset: **{dataset_option}**")
         else:
@@ -116,11 +127,13 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
 
     # The second column
     with col2:
-        preview_col1, extract_col2 = st.columns(2)
+        preview_col1, extract_col2, extract_col3 = st.columns(3)
         with preview_col1:
-            preview_button = st.button(":eyes: Preview searched scenario")
+            preview_button = st.button(":eyes: Search scenario")
         with extract_col2:
-            extract_btn = st.button(":arrow_down: Extract original scenario")
+            extract_btn_meta = st.button(":arrow_down: Extract scenario list")
+        with extract_col3:
+            extract_btn = st.button(":arrow_down: Extract scenario file")
 
         reminder_holder = st.empty()
 
@@ -131,7 +144,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                 # Understand scenario using GPT
                 reminder_holder.warning(':thinking_face: Start understand scenario using LLM...')
                 progress_bar = st.progress(0)
-                key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar)
+                key_label = get_scenario_classification_via_LLM(my_key, scenario_description, progress_bar, base_url=base_url)
+                st.session_state.my_data['key_label'] = key_label # add key_label to session state
                 print(key_label)
                 if key_label is None:
                     warning_messages = """
@@ -157,7 +171,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                         scenarioList = mainFunctionScenarioIdentification(tracks_original, key_label, latActDict, longActDict, interactIdDict, progress_bar)
                         print("The following scenarios are in the scenario pool:")
                         print(scenarioList)
-                        
+
                         # Calculate the metric value for frames when the requirements can be met
                         reminder_holder.warning(f"{len(scenarioList)} scenarios are found. Start calculate metric values...")
                         indexProgress = 0
@@ -172,8 +186,8 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                             initialFrame = curr_scenario[2]
                             finalFrame = curr_scenario[3]
                             egoVehData, tgtVehsData = find_vehicle_data_within_start_end_frame(tracks_original, egoId, targetIds, initialFrame, finalFrame)
-                            metric_value_res = calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehsData, reminder_holder, metric_option, \
-                                            metric_suboption, CA_Input, tracks_original, st.session_state.my_data['framerate'], target_value)
+                            metric_value_res = calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehsData, metric_option, \
+                                            metric_suboption, CA_Input, tracks_original, st.session_state.my_data['framerate'], target_value, reminder_holder)
                             # Compare the calculated metric value with predefined threshold
                             isScenario = if_scenario_within_threshold(metric_value_res, metric_threshold)
                             if isScenario:
@@ -184,9 +198,6 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                             indexProgress += 1
                             if indexProgress == len(scenarioList):
                                 progress_bar.progress(100)
-
-                # reminder_holder.write(st.session_state.my_data['desired_scenario'])
-
 
                 ## Scenario visualization
                 if len(st.session_state.my_data['desired_scenario']) != 0:
@@ -211,8 +222,49 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
                         fictive_tgt_dict[egoId] = tgtVehsData
                     anmation_holder = st.empty()
                     preview_scenario(fictive_ego_list, fictive_tgt_dict, reminder_holder, anmation_holder, dataset_option)
-                # else:
-                #     reminder_holder.warning(":cry: No scenarios are selected from the pool. Try to reset the criticality metric/value or check the openai key.")
+                else:
+                    reminder_holder.warning(":cry: No scenarios are selected from the pool. Try to reset the criticality metric/value or check the openai key.")
+
+        if extract_btn_meta:
+            # List: [[egoVehID, [tgtVehID,...], startFrame, endFrame],[],[]...]
+            desired_scenarios = st.session_state.my_data['desired_scenario']
+            track_num = dataset_load.name.split("/")[-1].split("_")[0]  # Use dataset_load.name instead of dataset_load
+            
+            # Create a DataFrame for the scenario list
+            print("The following scenarios are selected: ")
+            for scenario in desired_scenarios:
+                print(scenario)
+            
+            # Convert desired_scenarios to native Python types
+            desired_scenarios_native = convert_to_native(desired_scenarios)
+            
+            # Save the scenario list into a json file
+            output_path_json = f"{dataset_option}_{track_num}_scenario_list.json"
+            
+            # Create a dict 
+            output_dict = {
+                'track_num': track_num,
+                'scenario': {
+                    'scenario_description': st.session_state.my_data['key_label'],
+                    'scenario_list': desired_scenarios_native,  # Use the converted list
+                    'metric_option': metric_option,
+                    'metric_suboption': metric_suboption,
+                    'metric_threshold': metric_threshold
+                }
+            }
+                    
+            # Convert the dictionary to a JSON string first
+            json_str = json.dumps(output_dict, indent=4)
+
+            reminder_holder.warning("The meta file for the scenario list is generated. Click the button below to download.")
+
+            # Create a download button to download the JSON file
+            st.download_button(
+                label="Download scenario JSON",
+                data=json_str,
+                file_name=f"{dataset_option}_{track_num}_scenario_list.json",
+                mime="application/json"
+            )
 
         # Extract button
         if extract_btn:  

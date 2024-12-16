@@ -174,7 +174,8 @@ def add_everything(object_track, entities, cataref, init, act, osc_minor_version
     traj = xosc.Trajectory("my_trajectory", False)
     traj.add_shape(polyline)
 
-    trajaction = xosc.FollowTrajectoryAction(traj, xosc.FollowingMode.position)
+    trajaction = xosc.FollowTrajectoryAction(trajectory=traj, following_mode=xosc.FollowingMode.position,\
+                                             reference_domain=xosc.ReferenceContext.relative, scale=1.0, offset=0.0)
 
     # add everything into Act
     event.add_action(actionname, trajaction)
@@ -192,6 +193,7 @@ def xosc_generation(sim_time, ego_track, target_tracks_sampled, osc_minor_versio
         sim_time (double): Duration of simulation time.
         ego_track (dataframe): Fictive ego vehicle track
         target_tracks_sampled (list): Fictive target vehicle track
+        osc_minor_version (string): OpenSCENARIO version
         heading (double): heading angle
     """
 
@@ -530,8 +532,8 @@ def find_vehicle_data_within_start_end_frame(tracks_original, egoId, targetIds, 
     return egoVehData, tgtVehsData
 
 
-def calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehData, reminder_holder, metric_option, metric_suboption, \
-                                                   CA_Input, tracks_original, frame_rate, target_value):
+def calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehData, metric_option, metric_suboption, \
+                                                   CA_Input, tracks_original, frame_rate, target_value, reminder_holder=None):
     """
     Calculate metric value for each frame for desired scenario segment
 
@@ -636,7 +638,8 @@ def calc_metric_value_for_desired_scenario_segment(egoVehData, tgtVehData, remin
             return metric_df
     elif metric_option == "Velocity-Scale":
         if metric_suboption == "delta_v":
-            reminder_holder.warning(f':collision: No collision was identified in highD dataset.')
+            if reminder_holder is not None:
+                reminder_holder.warning(f':collision: No collision was identified in highD dataset.')
     pass
 
 
@@ -953,3 +956,17 @@ def if_scenario_within_threshold(metric_value_res, metric_threshold):
             return True
         else:
             return False
+        
+def convert_to_native(obj):
+    if isinstance(obj, dict):
+        return {k: convert_to_native(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_native(element) for element in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        return obj
