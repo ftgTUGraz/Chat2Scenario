@@ -129,7 +129,7 @@ if dataset_option == "highD" or dataset_option == "AD4CHE":
     with col2:
         preview_col1, extract_col2, extract_col3 = st.columns(3)
         with preview_col1:
-            preview_button = st.button(":eyes: Preview searched scenario")
+            preview_button = st.button(":eyes: Search scenario")
         with extract_col2:
             extract_btn_meta = st.button(":arrow_down: Extract scenario list")
         with extract_col3:

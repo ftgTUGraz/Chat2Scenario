@@ -2,12 +2,13 @@ import sys
 import os
 import concurrent.futures
 import json
+import argparse
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from tutorials.tutorials_run_script import process_scenario
 
-def load_config(config_path='config/config.json'):
+def load_config(config_path):
     """
     Load configuration from JSON file.
     
@@ -26,7 +27,7 @@ def load_config(config_path='config/config.json'):
         print(f"Error loading configuration: {e}")
         return None
 
-def load_scenario_descriptions(file_path='config/config_scenario_descriptions.txt'):
+def load_scenario_descriptions(file_path):
     """
     Load scenario descriptions from text file.
     
@@ -38,7 +39,6 @@ def load_scenario_descriptions(file_path='config/config_scenario_descriptions.tx
     """
     try:
         with open(file_path, 'r') as f:
-            # Filter out empty lines and comments
             descriptions = [line.strip() for line in f if line.strip() and not line.startswith('#')]
         print(f"Successfully loaded {len(descriptions)} scenario descriptions")
         return descriptions
@@ -49,27 +49,34 @@ def load_scenario_descriptions(file_path='config/config_scenario_descriptions.tx
 def threaded_process(config, metric_options):
     """
     Function to process a scenario configuration in a separate thread.
-    
-    Parameters:
-        config (dict): Configuration dictionary for the scenario.
-        metric_options (dict): Metric options to apply.
-    
-    Returns:
-        None
     """
     process_scenario(config, metric_options, save_list=True, save_zip=False)
 
-def main():
+def main(args):
     """
     Main function to execute multiple scenario processing using multithreading.
     """
     # Load configuration
-    config = load_config()
+    config = load_config(args.config)
     if not config:
         return
 
+    # Override configuration with command line arguments if provided
+    if args.openai_key:
+        config['openai_key'] = args.openai_key
+    if args.model:
+        config['model'] = args.model
+    if args.base_url:
+        config['base_url'] = args.base_url
+    if args.output_dir:
+        config['output_dir'] = args.output_dir
+    if args.track_nums:
+        config['track_nums'] = args.track_nums
+    if args.max_workers:
+        config['max_workers'] = args.max_workers
+
     # Load scenario descriptions
-    scenario_descriptions = load_scenario_descriptions()
+    scenario_descriptions = load_scenario_descriptions(args.scenarios)
     if not scenario_descriptions:
         return
 
@@ -77,7 +84,7 @@ def main():
     track_nums = [f'{i:02}' for i in config.get('track_nums', range(18, 22))]
     max_workers = config.get('max_workers', 12)
     metric_options = config.get('metric_options', {})
-    dataset_path_template = config.get('dataset_path_template', '/C:/PhD/Dataset/highD/data/{track_num}_tracks.csv')
+    dataset_path_template = config.get('dataset_path_template')
 
     # Use ThreadPoolExecutor for multithreading
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -97,11 +104,35 @@ def main():
         # Wait for all futures to complete and handle exceptions
         for future in concurrent.futures.as_completed(futures):
             try:
-                future.result()  # This will raise any exception from the thread
+                future.result()
             except Exception as exc:
                 print(f"Scenario processing generated an exception: {exc}")
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='Chat2Scenario Script')
+    
+    # Required arguments
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('--config', type=str, required=True,
+                      help='Path to configuration file')
+    required.add_argument('--scenarios', type=str, required=True,
+                      help='Path to scenario descriptions file')
+    
+    # Optional arguments
+    parser.add_argument('--track-nums', type=int, nargs='+',
+                      help='Track numbers to process (overrides config file)')
+    parser.add_argument('--openai-key', type=str,
+                      help='OpenAI API key (overrides config file)')
+    parser.add_argument('--model', type=str,
+                      help='OpenAI model to use (overrides config file)')
+    parser.add_argument('--base-url', type=str,
+                      help='OpenAI API base URL (overrides config file)')
+    parser.add_argument('--output-dir', type=str,
+                      help='Output directory (overrides config file)')
+    parser.add_argument('--max-workers', type=int,
+                      help='Maximum number of worker threads (overrides config file)')
+    
+    args = parser.parse_args()
+    main(args)
 
    
