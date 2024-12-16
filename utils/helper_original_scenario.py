@@ -174,7 +174,8 @@ def add_everything(object_track, entities, cataref, init, act, osc_minor_version
     traj = xosc.Trajectory("my_trajectory", False)
     traj.add_shape(polyline)
 
-    trajaction = xosc.FollowTrajectoryAction(traj, xosc.FollowingMode.position)
+    trajaction = xosc.FollowTrajectoryAction(trajectory=traj, following_mode=xosc.FollowingMode.position,\
+                                             reference_domain=xosc.ReferenceContext.relative, scale=1.0, offset=0.0)
 
     # add everything into Act
     event.add_action(actionname, trajaction)
