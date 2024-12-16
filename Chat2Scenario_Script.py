@@ -6,7 +6,7 @@ import argparse
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from tutorials.tutorials_run_script import process_scenario
+from utils.helper_run_script import process_scenario
 
 def load_config(config_path):
     """
