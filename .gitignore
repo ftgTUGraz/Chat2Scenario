@@ -1,7 +1,6 @@
 *.m
 *.xlsx
 *.pptx
-*.json
 *.prof
 *.gif
 *.pyc
