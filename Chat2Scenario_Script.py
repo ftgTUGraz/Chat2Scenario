@@ -57,8 +57,13 @@ def main(args):
     Main function to execute multiple scenario processing using multithreading.
     """
     # Load configuration
-    config = load_config(args.config)
+    if args.config is None:
+        config_path = os.path.join(os.path.dirname(__file__), 'config/config.json')
+    else:
+        config_path = args.config
+    config = load_config(config_path)
     if not config:
+        print("No valid configuration found, exiting...")
         return
 
     # Override configuration with command line arguments if provided
@@ -76,12 +81,28 @@ def main(args):
         config['max_workers'] = args.max_workers
 
     # Load scenario descriptions
-    scenario_descriptions = load_scenario_descriptions(args.scenarios)
+    if args.scenarios is None:
+        scenario_descriptions_path = os.path.join(os.path.dirname(__file__), 'config/config_scenario_descriptions.txt')
+    else:
+        scenario_descriptions_path = args.scenarios
+    scenario_descriptions = load_scenario_descriptions(scenario_descriptions_path)
     if not scenario_descriptions:
+        print("No valid scenario descriptions found, exiting...")
         return
 
     # Get configuration values
-    track_nums = [f'{i:02}' for i in config.get('track_nums', range(18, 22))]
+    if config.get('track_nums').__class__ == list:
+        track_nums = [f'{i:02}' for i in config.get('track_nums', range(18, 22))]
+    elif config.get('track_nums').__class__ == int:
+        track_nums = [f'{config.get("track_nums"):02}']
+    elif config.get('track_nums').__class__ == str:
+        start_index = int(config.get('track_nums').split('-')[0])
+        end_index = int(config.get('track_nums').split('-')[1])
+        track_nums = [f'{i:02}' for i in range(start_index, end_index+1)]
+    else:
+        print("Invalid track_nums value in configuration, exiting...")
+        return
+    
     max_workers = config.get('max_workers', 12)
     metric_options = config.get('metric_options', {})
     dataset_path_template = config.get('dataset_path_template')
@@ -111,12 +132,13 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Chat2Scenario Script')
     
-    # Required arguments
-    required = parser.add_argument_group('required arguments')
-    required.add_argument('--config', type=str, required=True,
+    # Basic arguments
+    parser.add_argument('--config', type=str,
                       help='Path to configuration file')
-    required.add_argument('--scenarios', type=str, required=True,
+    # if not provided, default to config/config.json in the script directory
+    parser.add_argument('--scenarios', type=str,
                       help='Path to scenario descriptions file')
+    # if not provided, default to config/config_scenario_descriptions.txt in the script directory
     
     # Optional arguments
     parser.add_argument('--track-nums', type=int, nargs='+',
