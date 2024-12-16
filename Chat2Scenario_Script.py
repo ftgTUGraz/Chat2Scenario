@@ -92,7 +92,7 @@ def main(args):
 
     # Get configuration values
     if config.get('track_nums').__class__ == list:
-        track_nums = [f'{i:02}' for i in config.get('track_nums', range(18, 22))]
+        track_nums = [f'{i:02}' for i in config.get('track_nums')]
     elif config.get('track_nums').__class__ == int:
         track_nums = [f'{config.get("track_nums"):02}']
     elif config.get('track_nums').__class__ == str:

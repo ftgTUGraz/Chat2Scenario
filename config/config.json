@@ -8,22 +8,15 @@
     "metric_threshold": "1 - 3",
     "CA_Input": null,
     "target_value": null,
-    "openai_key": "*********************",
+    "openai_key": "*****************************",
     "model": "gpt-4o-mini",
     "base_url": "https://api.openai.com/v1",
     "output_dir": "./output/",
     "track_nums": [1],
     "max_workers": 12,
     "metric_options": {
-        "Jerk-Scale": {
-            "Longitudinal jerk (LongJ)": "1.5 - 100"
-        },
         "Time-Scale": {
-            "Time To Collision (TTC)": "0.01 - 2",
-            "Time Headway (THW)": "0.01 - 0.3"
-        },
-        "Acceleration-Scale": {
-            "Deceleration to safety time (DST)": "6 - 100"
+            "Time To Collision (TTC)": "0.01 - 10"
         }
     }
 } 

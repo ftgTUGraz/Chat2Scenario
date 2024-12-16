@@ -61,37 +61,83 @@ conda activate chat2scenario
 ```
 
 ## Operation
+### Method 1 - Web Interface
 - Open the Project
-	- Open the entire project using a code editor e.g., Visual Studio Code
-	- Run the project in the terminal with the following command
-	```bash
-	streamlit run .\Chat2Scenario-Web.py
-	```
-	- The Chat2Scenario web application will appear
+    - Open the entire project using a code editor e.g., Visual Studio Code
+    - Run the project in the terminal with the following command
+    ```bash
+    streamlit run .\Chat2Scenario-Web.py
+    ```
+    - The Chat2Scenario web application will appear
 ![chat2scenario web](docs/Chat2Scenario_Web.png)
 - Set Up Everything
-	- Select "highD" dataset option (currently, only highD is compitable).
-	- Upload the corresponding dataset (only the xx_tracks.csv file should be uploaded).
-	- Select a criticality metric and specify the threshold.
-	- Enter your OpenAI API Key.
-	- Choose the desired scenario format.
-	- Provide a descriptive text for the scenario e.g., "The ego vehicle maintains its lane and velocity. Initially, Target Vehicle #1 is driving in the left adjacent lane. It then accelerates and changes lanes to the right, eventually driving in front of the ego vehicle."
+    - Select "highD" dataset option (currently, only highD is compitable).
+    - Upload the corresponding dataset (only the xx_tracks.csv file should be uploaded).
+    - Select a criticality metric and specify the threshold.
+    - Enter your OpenAI API Key.
+    - Choose the desired scenario format.
+    - Provide a descriptive text for the scenario e.g., "The ego vehicle maintains its lane and velocity. Initially, Target Vehicle #1 is driving in the left adjacent lane. It then accelerates and changes lanes to the right, eventually driving in front of the ego vehicle."
 - Run
-	- Click "Preview searched scenario" to search for and preview scenarios. 
-	- Scenarios are ready for download when the prograss bar reaches 100%.
+    - Click "Preview searched scenario" to search for and preview scenarios. 
+    - Scenarios are ready for download when the prograss bar reaches 100%.
 - Download
-	- Click "Extract original scenario" to start extraction process.
-	- After the progress bar reaches to 100\%, click "download" to acquire the xosc files. 
+    - Click "Extract original scenario" to start extraction process.
+    - After the progress bar reaches to 100\%, click "download" to acquire the xosc files. 
 - (Optional) Modify the path 
-	- If necessary, modify the path of RoadNetWork in the generated OpenSCENARIO.
-```xml
-<RoadNetwork>
-    <LogicFile filepath="../xodr/highD_01_highway.xodr"/>
-</RoadNetwork>
+    - If necessary, modify the path of RoadNetWork in the generated OpenSCENARIO.
+
+### Method 2 - Command Line Interface
+The project can also be run from the command line using `Chat2Scenario_Script.py`. This method is useful for batch processing or automation.
+
+#### Basic Usage
+```bash
+python Chat2Scenario_Script.py
 ```
-- Visualization
-	- Replay the xosc in Esmini based on the [userguide](https://esmini.github.io/#_view_a_scenario)
-	- Replay the txt file in CarMaker based on the [Q&A](https://www.ipg-automotive.com/en/support/support-request/faq/usage-of-user-inputs-from-a-file-in-a-maneuver-133/) 
+This will use the default configuration files:
+- `config/config.json`: Main configuration file
+- `config/config_scenario_descriptions.txt`: Scenario descriptions
+
+#### Command Line Options
+```bash
+python Chat2Scenario_Script.py [options]
+
+Options:
+  --config PATH        Path to configuration file (default: config/config.json)
+  --scenarios PATH     Path to scenario descriptions file (default: config/config_scenario_descriptions.txt)
+  --track-nums N [N...]  Track numbers to process (overrides config file)
+  --openai-key KEY    OpenAI API key (overrides config file)
+  --model MODEL       OpenAI model to use (overrides config file)
+  --base-url URL      OpenAI API base URL (overrides config file)
+  --output-dir DIR    Output directory (overrides config file)
+  --max-workers N     Maximum number of worker threads (overrides config file)
+```
+
+#### Example
+1. Using the default configuration files in the `config` folder:
+```bash
+python Chat2Scenario_Script.py
+```
+Attention! Remember to set:
+- everything you want to set in the `config.json` file.
+- the scenario descriptions in the `config_scenario_descriptions.txt` file.
+
+2. Using a custom configuration file:
+```bash
+python Chat2Scenario_Script.py --config my_config.json --scenarios my_scenarios.txt
+```
+
+3. override configuration by command line
+```bash
+python Chat2Scenario_Script.py --track-nums 1 2 3 4
+```
+
+#### Scenario Descriptions File Format
+The scenario descriptions file should contain one scenario per line:
+```text
+1. The ego vehicle is driving straight in the ego lane, and the target vehicle ahead changes lanes to the left adjacent lane.
+2. The ego vehicle is accelerating in the ego lane, and the target vehicle ahead changes lanes to the left adjacent lane.
+# Lines starting with # are comments and will be ignored
+```
 
 ## Contributing
 Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are greatly appreciated.
