@@ -57,7 +57,7 @@ dependencies:
       - multidict==6.0.5
       - nbformat==5.10.4
       - numpy==1.26.4
-      - openai==0.28.0
+      - openai==1.58.1
       - packaging==23.2
       - pandas==1.3.5
       - pigar==2.1.4
